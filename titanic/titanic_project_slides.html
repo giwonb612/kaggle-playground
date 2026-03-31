@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kaggle Titanic ML 프로젝트</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f172a;--card:#1e293b;--border:#334155;--accent:#38bdf8;
+  --red:#f87171;--green:#4ade80;--muted:#94a3b8;--text:#e2e8f0;
+  --yellow:#fbbf24;--purple:#a78bfa;--orange:#fb923c;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
+#progress-bar{position:fixed;top:0;left:0;height:3px;background:var(--accent);transition:width .4s ease;z-index:100}
+#slide-counter{position:fixed;top:12px;right:20px;font-size:13px;color:var(--muted);z-index:100;background:rgba(15,23,42,.8);padding:4px 12px;border-radius:20px;border:1px solid var(--border)}
+#slideshow{width:100vw;height:100vh;position:relative;overflow:hidden}
+.slide{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;padding:60px 80px 80px;opacity:0;transform:translateX(60px);transition:all .45s cubic-bezier(.4,0,.2,1);pointer-events:none}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.prev{opacity:0;transform:translateX(-60px)}
+.slide-num-badge{display:inline-block;background:var(--accent);color:#0f172a;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;margin-bottom:16px;width:fit-content}
+.slide-title{font-size:2rem;font-weight:800;margin-bottom:24px;line-height:1.2}
+.slide-title .icon{margin-right:10px}
+.slide-content{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px}
+.card-sm{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px 16px}
+.accent-text{color:var(--accent)}
+.muted{color:var(--muted);font-size:.85rem}
+.green{color:var(--green)}
+.red{color:var(--red)}
+.yellow{color:var(--yellow)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.flex{display:flex;gap:12px;align-items:center}
+.flex-col{display:flex;flex-direction:column;gap:8px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
+.kpi .val{font-size:1.8rem;font-weight:800;color:var(--accent)}
+.kpi .lbl{font-size:.8rem;color:var(--muted);margin-top:4px}
+.tooltip-term{border-bottom:1px dashed var(--muted);cursor:help;position:relative}
+.term-explain{font-size:.78rem;color:var(--muted);margin-top:4px;padding-left:12px;border-left:2px solid var(--border)}
+code{font-family:'Courier New',monospace;background:#0f172a;color:var(--accent);padding:2px 6px;border-radius:4px;font-size:.85em}
+.tag{display:inline-block;background:#1e3a5f;color:var(--accent);border:1px solid #38bdf855;padding:3px 10px;border-radius:20px;font-size:.8rem;margin:2px}
+table{width:100%;border-collapse:collapse;font-size:.85rem}
+th{background:#0f172a;color:var(--accent);padding:8px 12px;text-align:left;font-weight:600}
+td{padding:7px 12px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#243147}
+.bar-h{display:flex;align-items:center;gap:12px;margin:6px 0}
+.bar-h .label{width:120px;font-size:.83rem;text-align:right;color:var(--muted)}
+.bar-h .bar-track{flex:1;background:#0f172a;border-radius:4px;height:18px;position:relative}
+.bar-h .bar-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:.78rem;font-weight:600;transition:width 1s ease}
+.bar-h .val{width:50px;font-size:.83rem;font-weight:600}
+#nav{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:16px;align-items:center;z-index:100}
+#nav button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:10px 24px;border-radius:8px;cursor:pointer;font-size:.9rem;font-family:inherit;transition:all .2s}
+#nav button:hover{background:var(--accent);color:#0f172a;border-color:var(--accent)}
+#nav button:disabled{opacity:.3;cursor:not-allowed}
+.pipeline-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pipeline-step{background:var(--card);border:1px solid var(--accent);border-radius:8px;padding:8px 14px;font-size:.82rem;font-weight:600;color:var(--accent)}
+.pipeline-arrow{color:var(--muted);font-size:1.1rem}
+.highlight-box{background:linear-gradient(135deg,#1e3a5f,#1e293b);border:1px solid var(--accent);border-radius:10px;padding:14px 20px}
+.bullet{margin:6px 0;padding-left:20px;position:relative;font-size:.9rem}
+.bullet::before{content:'▸';position:absolute;left:0;color:var(--accent)}
+.number-bullet{margin:6px 0;padding-left:24px;position:relative;font-size:.9rem;counter-increment:item}
+ol.num-list{counter-reset:item;list-style:none}
+ol.num-list li{counter-increment:item;padding-left:28px;position:relative;margin:7px 0;font-size:.88rem}
+ol.num-list li::before{content:counter(item);position:absolute;left:0;background:var(--accent);color:#0f172a;width:20px;height:20px;border-radius:50%;font-size:.75rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+.model-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:.82rem}
+.model-card .name{font-weight:700;color:var(--accent);margin-bottom:6px;font-size:.9rem}
+.stack-box{background:#0f172a;border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:.82rem}
+.stack-label{font-size:.75rem;color:var(--muted);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+</style>
+</head>
+<body>
+<div id="progress-bar"></div>
+<div id="slide-counter">1 / 36</div>
+<div id="slideshow">
+
+<!-- SLIDE 1 -->
+<div class="slide active" data-slide="1">
+  <div class="slide-num-badge">01 / 36</div>
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:24px">
+    <div style="font-size:4rem">🚢</div>
+    <h1 style="font-size:2.8rem;font-weight:800;line-height:1.15">Kaggle Titanic ML 프로젝트</h1>
+    <p style="font-size:1.2rem;color:var(--muted)">EDA → 피처 엔지니어링 → 모델링 → 추론 전 과정</p>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 32px;margin-top:12px">
+      <p style="color:var(--accent);font-size:.95rem;font-weight:500">데이터 사이언스 파이프라인 완전 가이드</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:12px;flex-wrap:wrap">
+        <span class="tag">Python</span><span class="tag">scikit-learn</span><span class="tag">XGBoost</span><span class="tag">LightGBM</span><span class="tag">Plotly</span><span class="tag">Optuna</span>
+      </div>
+    </div>
+    <div style="margin-top:20px;text-align:center">
+      <div style="font-size:.85rem;color:var(--muted)">최종 달성 점수</div>
+      <div style="font-size:3rem;font-weight:800;color:var(--green)">0.77511</div>
+      <div style="font-size:.8rem;color:var(--muted)">Public Leaderboard · 상위 ~25%</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 2 -->
+<div class="slide" data-slide="2">
+  <div class="slide-num-badge">02 / 36</div>
+  <div class="slide-title">📋 프로젝트 개요</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="highlight-box">
+          <div style="font-weight:700;margin-bottom:8px;color:var(--accent)">🎯 대회 목표</div>
+          <p style="font-size:.88rem">Kaggle 타이타닉 대회: 승객 정보로 생존 여부 예측</p>
+          <div class="term-explain"><span style="color:var(--accent);font-weight:600">이진 분류(Binary Classification)</span>: 두 가지 결과(생존=1, 사망=0) 중 하나를 예측하는 ML 과제</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">📊 최종 달성 점수</div>
+          <div style="font-size:2.2rem;font-weight:800;color:var(--green)">0.77511</div>
+          <div class="muted" style="margin-top:4px">Public Leaderboard 상위 ~25%</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">🛠 사용 기술 스택</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag">Python</span><span class="tag">pandas</span><span class="tag">scikit-learn</span><span class="tag">XGBoost</span><span class="tag">LightGBM</span><span class="tag">Plotly</span><span class="tag">Optuna</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:14px">🔄 전체 파이프라인 흐름도</div>
+          <div class="flex-col" style="gap:8px">
+            <div class="pipeline-step" style="background:linear-gradient(90deg,#1e3a5f,#1e293b)">📥 데이터 수집</div>
+            <div style="text-align:center;color:var(--muted)">↓</div>
+            <div class="pipeline-step">🔍 EDA (탐색적 데이터 분석)</div>
+            <div style="text-align:center;color:var(--muted)">↓</div>
+            <div class="pipeline-step">⚙️ 피처 엔지니어링</div>
+            <div style="text-align:center;color:var(--muted)">↓</div>
+            <div class="pipeline-step">🤖 모델 학습 (6가지)</div>
+            <div style="text-align:center;color:var(--muted)">↓</div>
+            <div class="pipeline-step">🔗 스태킹 앙상블</div>
+            <div style="text-align:center;color:var(--muted)">↓</div>
+            <div class="pipeline-step" style="border-color:var(--green);color:var(--green)">📤 Kaggle 제출</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3 -->
+<div class="slide" data-slide="3">
+  <div class="slide-num-badge">03 / 36</div>
+  <div class="slide-title">🗃️ 타이타닉 데이터셋</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:12px">
+        <div class="grid-2" style="gap:10px">
+          <div class="kpi"><div class="val">891</div><div class="lbl">훈련셋 승객</div></div>
+          <div class="kpi"><div class="val">418</div><div class="lbl">테스트셋 승객</div></div>
+          <div class="kpi"><div class="val" style="color:var(--green)">342</div><div class="lbl">생존자</div></div>
+          <div class="kpi"><div class="val" style="color:var(--accent)">38.4%</div><div class="lbl">전체 생존율</div></div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">📈 전체 생존율 시각화</div>
+          <svg viewBox="0 0 200 60" style="width:100%;height:50px">
+            <rect x="0" y="20" width="76.8" height="20" rx="3" fill="#4ade80"/>
+            <rect x="76.8" y="20" width="123.2" height="20" rx="3" fill="#f87171"/>
+            <text x="38" y="34" fill="#0f172a" font-size="9" font-weight="bold" text-anchor="middle">생존 38.4%</text>
+            <text x="138" y="34" fill="#0f172a" font-size="9" font-weight="bold" text-anchor="middle">사망 61.6%</text>
+          </svg>
+        </div>
+        <div class="card" style="font-size:.82rem">
+          <div style="font-weight:600;color:var(--yellow);margin-bottom:6px">⚠️ 결측값 현황</div>
+          <div class="bar-h"><div class="label">Cabin</div><div class="bar-track"><div class="bar-fill" style="width:77.1%;background:var(--red)">77.1%</div></div></div>
+          <div class="bar-h"><div class="label">Age</div><div class="bar-track"><div class="bar-fill" style="width:19.9%;background:var(--orange)">19.9%</div></div></div>
+          <div class="bar-h"><div class="label">Embarked</div><div class="bar-track"><div class="bar-fill" style="width:2%;background:var(--yellow)">0.2%</div></div></div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="padding:12px">
+          <div style="font-weight:600;margin-bottom:8px;color:var(--accent)">12개 원본 피처</div>
+          <table>
+            <tr><th>피처</th><th>설명</th></tr>
+            <tr><td><code>PassengerId</code></td><td>승객 고유 번호</td></tr>
+            <tr><td><code style="color:var(--green)">Survived</code></td><td style="color:var(--green)">예측 대상 (0=사망, 1=생존)</td></tr>
+            <tr><td><code>Pclass</code></td><td>객실 등급 (1·2·3등석)</td></tr>
+            <tr><td><code>Name</code></td><td>이름 (타이틀 추출용)</td></tr>
+            <tr><td><code>Sex</code></td><td>성별</td></tr>
+            <tr><td><code>Age</code></td><td>나이 <span class="red">(19.9% 결측)</span></td></tr>
+            <tr><td><code>SibSp</code></td><td>형제/배우자 수</td></tr>
+            <tr><td><code>Parch</code></td><td>부모/자녀 수</td></tr>
+            <tr><td><code>Ticket</code></td><td>티켓 번호</td></tr>
+            <tr><td><code>Fare</code></td><td>요금</td></tr>
+            <tr><td><code>Cabin</code></td><td>객실 번호 <span class="red">(77.1% 결측)</span></td></tr>
+            <tr><td><code>Embarked</code></td><td>탑승항 (S/C/Q)</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 4 -->
+<div class="slide" data-slide="4">
+  <div class="slide-num-badge">04 / 36</div>
+  <div class="slide-title">🔍 EDA (탐색적 데이터 분석)</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">EDA란?</div>
+          <p style="font-size:.88rem">데이터의 특성, 분포, 패턴을 시각화로 이해하는 과정.</p>
+          <div class="term-explain"><span style="color:var(--accent);font-weight:600">EDA (Exploratory Data Analysis)</span>: 모델 구축 전 필수 단계. 데이터를 충분히 이해해야 좋은 피처를 만들 수 있음</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">📊 분석 목표</div>
+          <ol class="num-list">
+            <li>결측값 파악 및 처리 전략 수립</li>
+            <li>생존과 연관된 피처 발견</li>
+            <li>피처 엔지니어링 방향 결정</li>
+          </ol>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">🛠 시각화 도구</div>
+          <div class="flex" style="gap:12px">
+            <span class="tag" style="background:#1a2a3a;border-color:#38bdf8">Plotly</span>
+            <span style="font-size:.83rem;color:var(--muted)">인터랙티브 차트 라이브러리<br>웹 기반 동적 시각화</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">📈 총 14개 분석 차트</div>
+          <div class="grid-2" style="gap:8px">
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">01</span> 결측값 히트맵</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">02</span> 전체 생존율</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">03</span> 성별 생존율</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">04</span> 객실 등급 분석</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">05</span> 나이 분포</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">06</span> 요금 분포</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">07</span> 가족 규모</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">08</span> 탑승항 분석</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">09</span> 타이틀 분석</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">10</span> 상관관계 히트맵</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">11</span> Has_Cabin 분석</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">12</span> Cabin_Deck</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">13</span> TicketFreq</div>
+            <div class="card-sm" style="font-size:.78rem"><span style="color:var(--accent)">14</span> Pclass×Sex</div>
+          </div>
+        </div>
+        <div class="highlight-box" style="border-color:var(--green)">
+          <div style="font-size:.85rem">결과물: <code>eda_report/index.html</code></div>
+          <div class="muted" style="margin-top:4px">자체 포함(self-contained) 정적 웹페이지</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5 -->
+<div class="slide" data-slide="5">
+  <div class="slide-num-badge">05 / 36</div>
+  <div class="slide-title">⚠️ 결측값 분석</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div>
+        <div class="card" style="padding:24px">
+          <div style="font-weight:600;margin-bottom:16px;font-size:1rem">결측값 비율 (훈련 데이터)</div>
+          <svg viewBox="0 0 320 160" style="width:100%;overflow:visible">
+            <!-- Cabin bar -->
+            <text x="65" y="30" fill="#94a3b8" font-size="11" text-anchor="end">Cabin</text>
+            <rect x="75" y="18" width="231.3" height="20" rx="4" fill="#f87171"/>
+            <text x="312" y="32" fill="#f87171" font-size="11" font-weight="bold">77.1%</text>
+            <!-- Age bar -->
+            <text x="65" y="70" fill="#94a3b8" font-size="11" text-anchor="end">Age</text>
+            <rect x="75" y="58" width="59.7" height="20" rx="4" fill="#fb923c"/>
+            <text x="140" y="72" fill="#fb923c" font-size="11" font-weight="bold">19.9%</text>
+            <!-- Embarked bar -->
+            <text x="65" y="110" fill="#94a3b8" font-size="11" text-anchor="end">Embarked</text>
+            <rect x="75" y="98" width="1.8" height="20" rx="2" fill="#fbbf24"/>
+            <text x="82" y="112" fill="#fbbf24" font-size="11" font-weight="bold">0.2%</text>
+            <!-- axis -->
+            <line x1="75" y1="140" x2="315" y2="140" stroke="#334155" stroke-width="1"/>
+            <text x="75" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">0%</text>
+            <text x="135" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">20%</text>
+            <text x="195" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">40%</text>
+            <text x="255" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">60%</text>
+            <text x="315" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">80%</text>
+          </svg>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div class="card" style="border-left:3px solid var(--red)">
+          <div style="font-weight:700;color:var(--red);margin-bottom:8px">🔴 Cabin — 77.1% 결측</div>
+          <p style="font-size:.85rem">버리지 말고 의미있는 피처로 변환!</p>
+          <div class="term-explain">→ <code>Has_Cabin</code>: 객실 기록 유무 (이진 피처)<br>→ <code>Cabin_Deck</code>: 첫 글자(갑판 위치) 추출</div>
+        </div>
+        <div class="card" style="border-left:3px solid var(--orange)">
+          <div style="font-weight:700;color:var(--orange);margin-bottom:8px">🟠 Age — 19.9% 결측</div>
+          <p style="font-size:.85rem">스마트한 그룹별 대체!</p>
+          <div class="term-explain">단순 전체 중앙값 ❌<br>(Pclass, Title) 그룹별 중앙값 ✅<br>예: Master 그룹 중앙값 = <strong style="color:var(--accent)">4.0세</strong></div>
+        </div>
+        <div class="card" style="border-left:3px solid var(--yellow)">
+          <div style="font-weight:700;color:var(--yellow);margin-bottom:8px">🟡 Embarked — 0.2% 결측</div>
+          <p style="font-size:.85rem">2건만 결측 → 최빈값 <code>'S'</code>(사우샘프턴)로 대체</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6 -->
+<div class="slide" data-slide="6">
+  <div class="slide-num-badge">06 / 36</div>
+  <div class="slide-title">📊 전체 생존율</div>
+  <div class="slide-content">
+    <div class="grid-4" style="margin-bottom:16px">
+      <div class="kpi"><div class="val">891</div><div class="lbl">전체 승객</div></div>
+      <div class="kpi"><div class="val" style="color:var(--green)">342</div><div class="lbl">생존자</div></div>
+      <div class="kpi"><div class="val" style="color:var(--red)">549</div><div class="lbl">사망자</div></div>
+      <div class="kpi"><div class="val">38.4%</div><div class="lbl">생존율</div></div>
+    </div>
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <svg viewBox="0 0 200 200" style="width:180px;height:180px">
+          <!-- Donut: 38.4% survived, 61.6% dead -->
+          <!-- r=70, circumference=439.82 -->
+          <!-- survived: 439.82*0.384=168.89 -->
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#f87171" stroke-width="28"/>
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#4ade80" stroke-width="28"
+            stroke-dasharray="168.89 270.93" stroke-dashoffset="109.95"
+            transform="rotate(-90 100 100)"/>
+          <text x="100" y="95" text-anchor="middle" fill="#e2e8f0" font-size="22" font-weight="bold">38.4%</text>
+          <text x="100" y="115" text-anchor="middle" fill="#94a3b8" font-size="11">생존율</text>
+        </svg>
+        <div style="display:flex;gap:16px;margin-top:8px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:.82rem"><span style="width:12px;height:12px;background:var(--green);border-radius:2px;display:inline-block"></span>생존 38.4%</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:.82rem"><span style="width:12px;height:12px;background:var(--red);border-radius:2px;display:inline-block"></span>사망 61.6%</div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--yellow);margin-bottom:8px">⚡ 클래스 불균형이란?</div>
+          <p style="font-size:.85rem">생존/사망 비율이 불균형 (38% vs 62%)</p>
+          <div class="term-explain"><span style="color:var(--accent);font-weight:600">Class Imbalance</span>: 단순히 "모두 사망"으로 예측해도 <strong style="color:var(--yellow)">61.6% 정확도</strong> 달성 가능<br>→ 모델은 반드시 이 기준선을 넘어야 함</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">🎯 기준선(Baseline) 정확도</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--yellow)">61.6%</div>
+          <div class="muted">모두 사망으로 예측 시 달성 가능한 정확도</div>
+          <div style="margin-top:12px;font-size:.85rem">우리 최종 모델: <span style="color:var(--green);font-weight:700">77.5%</span> <span class="muted">(+15.9%p 향상)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7 -->
+<div class="slide" data-slide="7">
+  <div class="slide-num-badge">07 / 36</div>
+  <div class="slide-title">👥 성별과 생존율 — 가장 강력한 신호</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="padding:24px">
+        <div style="font-weight:600;margin-bottom:16px">성별별 생존율</div>
+        <svg viewBox="0 0 280 180" style="width:100%">
+          <!-- Female bar -->
+          <text x="60" y="45" fill="#94a3b8" font-size="12" text-anchor="end">여성 👩</text>
+          <rect x="70" y="28" width="148.4" height="28" rx="5" fill="#4ade80"/>
+          <text x="224" y="47" fill="#4ade80" font-size="13" font-weight="bold">74.2%</text>
+          <!-- Male bar -->
+          <text x="60" y="105" fill="#94a3b8" font-size="12" text-anchor="end">남성 👨</text>
+          <rect x="70" y="88" width="37.8" height="28" rx="5" fill="#f87171"/>
+          <text x="114" y="107" fill="#f87171" font-size="13" font-weight="bold">18.9%</text>
+          <!-- axis -->
+          <line x1="70" y1="140" x2="270" y2="140" stroke="#334155" stroke-width="1"/>
+          <text x="70" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">0%</text>
+          <text x="120" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">25%</text>
+          <text x="170" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">50%</text>
+          <text x="220" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">75%</text>
+          <text x="270" y="155" fill="#94a3b8" font-size="9" text-anchor="middle">100%</text>
+          <!-- ref lines -->
+          <line x1="120" y1="25" x2="120" y2="140" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="170" y1="25" x2="170" y2="140" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="220" y1="25" x2="220" y2="140" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+        </svg>
+        <div style="display:flex;gap:20px;justify-content:center;margin-top:8px">
+          <div style="font-size:.82rem"><span style="color:var(--green)">■</span> 여성: <strong>74.2%</strong></div>
+          <div style="font-size:.82rem"><span style="color:var(--red)">■</span> 남성: <strong>18.9%</strong></div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="highlight-box">
+          <div style="font-size:1.1rem;font-weight:700;margin-bottom:8px">⚓ "Women and Children First"</div>
+          <p style="font-size:.88rem;color:var(--muted)">타이타닉 침몰 당시 실제로 적용된 원칙이 데이터에도 명확히 반영됨</p>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">🏆 단독 예측 성능</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--accent)">~79%</div>
+          <div class="muted">성별 단독으로 달성 가능한 정확도</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px;color:var(--accent)">💡 피처 중요도 관점</div>
+          <p style="font-size:.85rem">성별은 타이타닉 데이터에서 <strong style="color:var(--green)">가장 강력한 단일 피처</strong></p>
+          <div class="term-explain"><span style="color:var(--accent);font-weight:600">Feature Importance</span>: 모델이 예측할 때 각 피처를 얼마나 활용했는지 나타내는 척도</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 8 -->
+<div class="slide" data-slide="8">
+  <div class="slide-num-badge">08 / 36</div>
+  <div class="slide-title">🎫 객실 등급(Pclass)과 생존율</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="padding:24px">
+        <div style="font-weight:600;margin-bottom:16px">등급별 생존율</div>
+        <svg viewBox="0 0 280 180" style="width:100%">
+          <text x="65" y="42" fill="#94a3b8" font-size="11" text-anchor="end">1등석 🥇</text>
+          <rect x="75" y="26" width="126" height="26" rx="5" fill="#38bdf8"/>
+          <text x="207" y="43" fill="#38bdf8" font-size="12" font-weight="bold">63.0%</text>
+          <text x="65" y="90" fill="#94a3b8" font-size="11" text-anchor="end">2등석 🥈</text>
+          <rect x="75" y="74" width="94.6" height="26" rx="5" fill="#a78bfa"/>
+          <text x="175" y="91" fill="#a78bfa" font-size="12" font-weight="bold">47.3%</text>
+          <text x="65" y="138" fill="#94a3b8" font-size="11" text-anchor="end">3등석 🥉</text>
+          <rect x="75" y="122" width="48.4" height="26" rx="5" fill="#f87171"/>
+          <text x="129" y="139" fill="#f87171" font-size="12" font-weight="bold">24.2%</text>
+          <line x1="75" y1="160" x2="275" y2="160" stroke="#334155" stroke-width="1"/>
+          <text x="75" y="173" fill="#94a3b8" font-size="9" text-anchor="middle">0%</text>
+          <text x="125" y="173" fill="#94a3b8" font-size="9" text-anchor="middle">25%</text>
+          <text x="175" y="173" fill="#94a3b8" font-size="9" text-anchor="middle">50%</text>
+          <text x="225" y="173" fill="#94a3b8" font-size="9" text-anchor="middle">75%</text>
+          <line x1="125" y1="22" x2="125" y2="160" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="175" y1="22" x2="175" y2="160" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="225" y1="22" x2="225" y2="160" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+        </svg>
+      </div>
+      <div class="flex-col" style="gap:14px">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">📌 왜 등급이 중요한가?</div>
+          <div class="bullet">상위 갑판 위치 → 구명정까지 거리 가까움</div>
+          <div class="bullet">사회적 우선순위 → 탈출 우선권</div>
+          <div class="bullet">1등석 = 높은 요금 = 높은 생존율</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">🔀 Pclass × Sex 교차 분석</div>
+          <table>
+            <tr><th></th><th>여성</th><th>남성</th></tr>
+            <tr><td style="color:var(--accent)">1등석</td><td style="color:var(--green)">96.8%</td><td>36.9%</td></tr>
+            <tr><td style="color:var(--purple)">2등석</td><td style="color:var(--green)">92.1%</td><td>15.7%</td></tr>
+            <tr><td style="color:var(--red)">3등석</td><td style="color:var(--yellow)">50.0%</td><td>13.5%</td></tr>
+          </table>
+          <div class="term-explain" style="margin-top:8px">3등석 여성(50%)도 1등석 남성(37%)보다 높은 생존율 → 성별 효과가 등급보다 강력</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9 -->
+<div class="slide" data-slide="9">
+  <div class="slide-num-badge">09 / 36</div>
+  <div class="slide-title">🎂 나이 분포와 생존율</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:12px">나이 구간별 생존율</div>
+        <svg viewBox="0 0 280 180" style="width:100%">
+          <!-- bars for age groups -->
+          <text x="55" y="38" fill="#94a3b8" font-size="10" text-anchor="end">0-10세</text>
+          <rect x="60" y="22" width="116" height="22" rx="4" fill="#4ade80"/>
+          <text x="182" y="37" fill="#4ade80" font-size="11" font-weight="bold">58%</text>
+          <text x="55" y="72" fill="#94a3b8" font-size="10" text-anchor="end">11-20세</text>
+          <rect x="60" y="56" width="86" height="22" rx="4" fill="#4ade80" opacity="0.8"/>
+          <text x="152" y="71" fill="#4ade80" font-size="11" font-weight="bold">43%</text>
+          <text x="55" y="106" fill="#94a3b8" font-size="10" text-anchor="end">21-40세</text>
+          <rect x="60" y="90" width="70" height="22" rx="4" fill="#fbbf24"/>
+          <text x="136" y="105" fill="#fbbf24" font-size="11" font-weight="bold">35%</text>
+          <text x="55" y="140" fill="#94a3b8" font-size="10" text-anchor="end">41-60세</text>
+          <rect x="60" y="124" width="76" height="22" rx="4" fill="#fb923c"/>
+          <text x="142" y="139" fill="#fb923c" font-size="11" font-weight="bold">38%</text>
+          <text x="55" y="172" fill="#94a3b8" font-size="10" text-anchor="end">61+세</text>
+          <rect x="60" y="156" width="44" height="22" rx="4" fill="#f87171"/>
+          <text x="110" y="171" fill="#f87171" font-size="11" font-weight="bold">22%</text>
+        </svg>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--green);margin-bottom:8px">👶 아이들의 높은 생존율</div>
+          <p style="font-size:.85rem">0-15세 아동: 높은 생존율 → "아이 먼저" 원칙</p>
+          <p style="font-size:.85rem;margin-top:6px;color:var(--muted)">성인 남성(20-40대): 가장 낮은 생존율</p>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px;color:var(--yellow)">⚠️ 결측값 처리 전략</div>
+          <div style="font-size:.85rem;margin-bottom:6px">
+            <span style="color:var(--red)">❌</span> 단순 전체 중앙값 대체 (28세)
+          </div>
+          <div style="font-size:.85rem;color:var(--green);margin-bottom:6px">
+            <span style="color:var(--green)">✅</span> (Pclass, Title) 그룹별 중앙값 대체
+          </div>
+          <table style="margin-top:8px;font-size:.8rem">
+            <tr><th>Title</th><th>Pclass</th><th>중앙값 나이</th></tr>
+            <tr><td>Master</td><td>1/2/3</td><td style="color:var(--accent)">4.0세</td></tr>
+            <tr><td>Miss</td><td>1</td><td style="color:var(--accent)">30.0세</td></tr>
+            <tr><td>Mr</td><td>3</td><td style="color:var(--accent)">25.0세</td></tr>
+          </table>
+          <div class="term-explain" style="margin-top:8px"><code>Master</code>: 어린 남자아이를 나타내는 호칭 → 그룹 중앙값이 4.0세로 매우 낮음</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10 -->
+<div class="slide" data-slide="10">
+  <div class="slide-num-badge">10 / 36</div>
+  <div class="slide-title">💰 요금(Fare) 분포</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="card" style="padding:20px">
+          <div style="font-weight:600;margin-bottom:10px">원본 분포 (우편향)</div>
+          <svg viewBox="0 0 260 100" style="width:100%">
+            <!-- skewed histogram -->
+            <rect x="10" y="10" width="30" height="70" rx="3" fill="#38bdf8" opacity="0.8"/>
+            <rect x="44" y="38" width="24" height="42" rx="3" fill="#38bdf8" opacity="0.7"/>
+            <rect x="72" y="55" width="20" height="25" rx="3" fill="#38bdf8" opacity="0.6"/>
+            <rect x="96" y="65" width="16" height="15" rx="3" fill="#38bdf8" opacity="0.5"/>
+            <rect x="116" y="70" width="14" height="10" rx="3" fill="#38bdf8" opacity="0.4"/>
+            <rect x="134" y="73" width="12" height="7" rx="3" fill="#38bdf8" opacity="0.35"/>
+            <rect x="150" y="75" width="90" height="5" rx="3" fill="#38bdf8" opacity="0.3"/>
+            <line x1="10" y1="82" x2="250" y2="82" stroke="#334155" stroke-width="1"/>
+            <text x="10" y="95" fill="#94a3b8" font-size="9">0</text>
+            <text x="100" y="95" fill="#94a3b8" font-size="9">~100</text>
+            <text x="220" y="95" fill="#94a3b8" font-size="9">512</text>
+            <text x="135" y="25" fill="#f87171" font-size="9" text-anchor="middle">극단값 →</text>
+          </svg>
+        </div>
+        <div class="card" style="padding:20px">
+          <div style="font-weight:600;margin-bottom:10px">로그 변환 후 (정규화)</div>
+          <svg viewBox="0 0 260 100" style="width:100%">
+            <!-- normal-ish histogram -->
+            <rect x="10" y="50" width="20" height="30" rx="3" fill="#4ade80" opacity="0.7"/>
+            <rect x="34" y="30" width="22" height="50" rx="3" fill="#4ade80" opacity="0.8"/>
+            <rect x="60" y="15" width="24" height="65" rx="3" fill="#4ade80"/>
+            <rect x="88" y="20" width="24" height="60" rx="3" fill="#4ade80" opacity="0.9"/>
+            <rect x="116" y="35" width="22" height="45" rx="3" fill="#4ade80" opacity="0.8"/>
+            <rect x="142" y="50" width="20" height="30" rx="3" fill="#4ade80" opacity="0.7"/>
+            <rect x="166" y="60" width="18" height="20" rx="3" fill="#4ade80" opacity="0.6"/>
+            <rect x="188" y="68" width="60" height="12" rx="3" fill="#4ade80" opacity="0.4"/>
+            <line x1="10" y1="82" x2="250" y2="82" stroke="#334155" stroke-width="1"/>
+            <text x="10" y="95" fill="#94a3b8" font-size="9">0</text>
+            <text x="120" y="95" fill="#94a3b8" font-size="9">3.1</text>
+            <text x="230" y="95" fill="#94a3b8" font-size="9">6.2</text>
+          </svg>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">📐 로그 변환(Log Transform)</div>
+          <div style="font-size:.85rem">공식: <code>log(1 + Fare)</code></div>
+          <div class="term-explain">극단적 우편향 분포를 정규 분포에 가깝게 변환<br>→ 트리 기반 모델도 더 균등한 분할 가능<br>→ 선형 모델에서 특히 중요</div>
+        </div>
+        <div class="grid-2" style="gap:10px">
+          <div class="card" style="text-align:center">
+            <div style="font-size:.75rem;color:var(--muted)">변환 전</div>
+            <div style="font-size:1.4rem;font-weight:700;color:var(--red)">0~512</div>
+            <div style="font-size:.72rem;color:var(--muted)">극단값 존재</div>
+          </div>
+          <div class="card" style="text-align:center">
+            <div style="font-size:.75rem;color:var(--muted)">변환 후</div>
+            <div style="font-size:1.4rem;font-weight:700;color:var(--green)">0~6.2</div>
+            <div style="font-size:.72rem;color:var(--muted)">균등 분포</div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:6px">💡 인사이트</div>
+          <div class="bullet" style="font-size:.85rem">요금 ↑ → 생존율 ↑ (1등석 상관관계)</div>
+          <div class="bullet" style="font-size:.85rem">테스트셋 1건 결측 → Pclass=3 그룹 중앙값으로 대체</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- SLIDE 21 -->
+<div class="slide" data-slide="21">
+  <div class="slide-num-badge">21 / 36</div>
+  <div class="slide-title">🔗 스태킹 앙상블(Stacking Ensemble)</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:12px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">앙상블 &amp; 스태킹이란?</div>
+          <div class="term-explain" style="border:none;padding:0">
+            <span style="color:var(--accent);font-weight:600">앙상블(Ensemble)</span>: 여러 모델의 예측을 결합해 단일 모델보다 높은 성능 달성<br><br>
+            <span style="color:var(--green);font-weight:600">스태킹(Stacking)</span>: 기본 모델들의 예측을 새로운 피처로 사용해 메타 모델을 학습
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px;color:var(--yellow)">OOF란?</div>
+          <div class="term-explain" style="border:none;padding:0">
+            <span style="color:var(--yellow);font-weight:600">OOF (Out-of-Fold)</span>: 각 폴드에서 검증 예측만 사용<br>→ 모델이 학습하지 않은 데이터의 예측<br>→ <strong style="color:var(--green)">데이터 누수 완전 방지</strong>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:14px">스태킹 구조</div>
+        <div class="stack-box" style="margin-bottom:8px">
+          <div class="stack-label">Level 0 — 기본 모델 (6개)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag" style="font-size:.75rem">LR</span>
+            <span class="tag" style="font-size:.75rem">RF</span>
+            <span class="tag" style="font-size:.75rem">GB</span>
+            <span class="tag" style="font-size:.75rem;border-color:var(--accent)">XGB</span>
+            <span class="tag" style="font-size:.75rem;border-color:var(--green)">LGBM</span>
+            <span class="tag" style="font-size:.75rem">SVM</span>
+          </div>
+          <div style="margin-top:8px;font-size:.78rem;color:var(--muted)">↓ OOF 예측 → 훈련셋 메타 피처 (N×6)<br>↓ 테스트셋 예측 생성</div>
+        </div>
+        <div style="text-align:center;color:var(--accent);font-size:1.2rem;margin:4px 0">↓</div>
+        <div class="stack-box" style="margin-bottom:8px;border-color:var(--accent)">
+          <div class="stack-label" style="color:var(--accent)">Level 1 — 메타 모델</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="tag" style="border-color:var(--accent)">Logistic Regression</span>
+            <span style="font-size:.78rem;color:var(--muted)">OOF 예측으로 학습</span>
+          </div>
+        </div>
+        <div style="text-align:center;color:var(--green);font-size:1.2rem;margin:4px 0">↓</div>
+        <div class="stack-box" style="border-color:var(--green)">
+          <div class="stack-label" style="color:var(--green)">최종 예측</div>
+          <div style="font-size:.8rem;color:var(--text)">418개 테스트 승객의 생존 여부</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 22 -->
+<div class="slide" data-slide="22">
+  <div class="slide-num-badge">22 / 36</div>
+  <div class="slide-title">🔍 피처 중요도 분석 &amp; SHAP</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:14px">Top 10 피처 중요도 (XGBoost)</div>
+        <svg viewBox="0 0 280 220" style="width:100%">
+          <text x="90" y="22" fill="#94a3b8" font-size="9" text-anchor="end">Title(타이틀)</text>
+          <rect x="94" y="10" width="92.5" height="16" rx="3" fill="#38bdf8"/>
+          <text x="190" y="22" fill="#38bdf8" font-size="9" font-weight="bold">0.185</text>
+          <text x="90" y="44" fill="#94a3b8" font-size="9" text-anchor="end">Sex(성별)</text>
+          <rect x="94" y="32" width="71" height="16" rx="3" fill="#4ade80"/>
+          <text x="169" y="44" fill="#4ade80" font-size="9" font-weight="bold">0.142</text>
+          <text x="90" y="66" fill="#94a3b8" font-size="9" text-anchor="end">Pclass_Sex</text>
+          <rect x="94" y="54" width="49" height="16" rx="3" fill="#a78bfa"/>
+          <text x="147" y="66" fill="#a78bfa" font-size="9" font-weight="bold">0.098</text>
+          <text x="90" y="88" fill="#94a3b8" font-size="9" text-anchor="end">Fare(요금)</text>
+          <rect x="94" y="76" width="43.5" height="16" rx="3" fill="#fbbf24"/>
+          <text x="141" y="88" fill="#fbbf24" font-size="9" font-weight="bold">0.087</text>
+          <text x="90" y="110" fill="#94a3b8" font-size="9" text-anchor="end">Has_Cabin</text>
+          <rect x="94" y="98" width="38" height="16" rx="3" fill="#fb923c"/>
+          <text x="136" y="110" fill="#fb923c" font-size="9" font-weight="bold">0.076</text>
+          <text x="90" y="132" fill="#94a3b8" font-size="9" text-anchor="end">Age(나이)</text>
+          <rect x="94" y="120" width="35.5" height="16" rx="3" fill="#38bdf8" opacity="0.7"/>
+          <text x="133" y="132" fill="#38bdf8" font-size="9" font-weight="bold">0.071</text>
+          <text x="90" y="154" fill="#94a3b8" font-size="9" text-anchor="end">Pclass</text>
+          <rect x="94" y="142" width="32.5" height="16" rx="3" fill="#4ade80" opacity="0.7"/>
+          <text x="130" y="154" fill="#4ade80" font-size="9" font-weight="bold">0.065</text>
+          <text x="90" y="176" fill="#94a3b8" font-size="9" text-anchor="end">FamilySize</text>
+          <rect x="94" y="164" width="29" height="16" rx="3" fill="#94a3b8" opacity="0.7"/>
+          <text x="127" y="176" fill="#94a3b8" font-size="9" font-weight="bold">0.058</text>
+          <text x="90" y="198" fill="#94a3b8" font-size="9" text-anchor="end">TicketFreq</text>
+          <rect x="94" y="186" width="23.5" height="16" rx="3" fill="#64748b"/>
+          <text x="121" y="198" fill="#64748b" font-size="9" font-weight="bold">0.047</text>
+          <text x="90" y="220" fill="#94a3b8" font-size="9" text-anchor="end">Cabin_Deck</text>
+          <rect x="94" y="208" width="20.5" height="16" rx="3" fill="#475569"/>
+          <text x="118" y="220" fill="#475569" font-size="9" font-weight="bold">0.041</text>
+        </svg>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">피처 중요도란?</div>
+          <div class="term-explain" style="border:none;padding:0">
+            <span style="color:var(--accent);font-weight:600">Feature Importance</span>: 모델이 예측할 때 각 피처를 얼마나 활용했는지 정량화<br><br>
+            <span style="color:var(--purple);font-weight:600">SHAP (SHapley Additive exPlanations)</span>: 게임 이론 기반. 개별 예측에 대한 각 피처의 기여도를 정확히 측정
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">🏆 Top 3 핵심 피처</div>
+          <div style="font-size:.9rem;margin:6px 0"><span style="color:var(--accent)">①</span> <strong>Title</strong> — 사회적 지위 + 나이 정보 통합 (18.5%)</div>
+          <div style="font-size:.9rem;margin:6px 0"><span style="color:var(--green)">②</span> <strong>Sex</strong> — "여성 먼저" 원칙 (14.2%)</div>
+          <div style="font-size:.9rem;margin:6px 0"><span style="color:var(--purple)">③</span> <strong>Pclass_Sex</strong> — 교호작용 (9.8%)</div>
+        </div>
+        <div class="card-sm">
+          <div style="font-size:.82rem;color:var(--muted)">Top 3 합산: <strong style="color:var(--text)">42.5%</strong> — 세 피처가 모델 결정의 절반 담당</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 23 -->
+<div class="slide" data-slide="23">
+  <div class="slide-num-badge">23 / 36</div>
+  <div class="slide-title">📤 v1 최초 제출 — Public Score 0.77033</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">v1 구성</div>
+          <div class="bullet">기본 스태킹 앙상블 (6 기본 모델 + LR 메타)</div>
+          <div class="bullet">17개 피처 (수치형 7 + 범주형 10)</div>
+          <div class="bullet" style="color:var(--yellow)">TicketFreq: 훈련/테스트 개별 계산 (버그 있음)</div>
+        </div>
+        <div class="grid-2" style="gap:10px">
+          <div class="kpi"><div class="val">83.5%</div><div class="lbl">CV 점수</div></div>
+          <div class="kpi"><div class="val" style="color:var(--green)">0.77033</div><div class="lbl">Public Score</div></div>
+        </div>
+        <div class="card" style="border-color:var(--yellow)">
+          <div style="font-weight:600;margin-bottom:8px;color:var(--yellow)">⚠️ CV vs Public 갭</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:2rem;font-weight:800;color:var(--yellow)">6.5%p</div>
+            <div style="font-size:.85rem;color:var(--muted)">83.5% (CV) - 77.0% (Public)</div>
+          </div>
+          <div class="term-explain" style="margin-top:8px">
+            <span style="color:var(--yellow);font-weight:600">과적합(Overfitting) 신호</span>: 모델이 훈련 데이터에 너무 특화<br>→ 새 데이터(테스트)에서 성능 저하
+          </div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="card" style="text-align:center;padding:30px">
+          <div style="font-size:.9rem;color:var(--muted);margin-bottom:8px">최초 제출 결과</div>
+          <div style="font-size:3rem;font-weight:800;color:var(--accent)">0.77033</div>
+          <div style="margin-top:12px;font-size:.85rem">
+            418개 테스트 중 <strong style="color:var(--green)">약 322개 정확</strong>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">📊 기준선 대비 향상</div>
+          <svg viewBox="0 0 240 80" style="width:100%">
+            <rect x="10" y="20" width="55" height="40" rx="4" fill="#f87171" opacity="0.7"/>
+            <text x="37" y="43" fill="#0f172a" font-size="9" font-weight="bold" text-anchor="middle">기준선</text>
+            <text x="37" y="53" fill="#0f172a" font-size="8" text-anchor="middle">61.6%</text>
+            <line x1="65" y1="40" x2="90" y2="40" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <rect x="90" y="10" width="90" height="50" rx="4" fill="#38bdf8" opacity="0.85"/>
+            <text x="135" y="37" fill="#0f172a" font-size="10" font-weight="bold" text-anchor="middle">v1 Public</text>
+            <text x="135" y="50" fill="#0f172a" font-size="9" text-anchor="middle">77.0%</text>
+            <text x="77" y="38" fill="#4ade80" font-size="8" text-anchor="middle">+15.4%p</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 24 -->
+<div class="slide" data-slide="24">
+  <div class="slide-num-badge">24 / 36</div>
+  <div class="slide-title">❌ v2 개선 시도 — 실패 사례 분석</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:12px">
+        <div class="card" style="border-color:var(--red)">
+          <div style="font-weight:600;color:var(--red);margin-bottom:8px">v2 변경사항</div>
+          <div class="bullet">TicketFreq 버그 수정 (train+test 합쳐서 계산)</div>
+          <div class="bullet">새 피처 추가: <code>IsChild</code>, <code>IsMother</code>, <code>FarePerPerson</code>, <code>SurnameFreq</code></div>
+          <div class="bullet">강한 정규화: XGB <code>max_depth</code> 4→3, <code>min_child_weight</code> 추가</div>
+        </div>
+        <div class="kpi" style="background:var(--card);border:1px solid var(--red)">
+          <div class="val" style="color:var(--red)">0.76315</div>
+          <div class="lbl">Public Score (-0.00718 vs v1)</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px;color:var(--yellow)">📉 결과: v1보다 낮음!</div>
+          <div style="font-size:.85rem;color:var(--muted)">화려한 개선이 오히려 독이 됨</div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div class="highlight-box" style="border-color:var(--red)">
+          <div style="font-weight:700;color:var(--red);margin-bottom:8px">원인 분석 #1</div>
+          <div class="term-explain" style="border:none;padding:0">
+            <span style="color:var(--red);font-weight:600">차원의 저주(Curse of Dimensionality)</span><br>
+            891개 소규모 데이터에서 피처를 무작정 추가하면 모델 일반화 성능 저하<br>
+            → 피처 수 ↑ but 데이터 수 고정 = 희소성 증가
+          </div>
+        </div>
+        <div class="highlight-box" style="border-color:var(--orange)">
+          <div style="font-weight:700;color:var(--orange);margin-bottom:8px">원인 분석 #2</div>
+          <p style="font-size:.85rem">강한 정규화가 오히려 유용한 신호까지 억제</p>
+          <div class="term-explain" style="border:none;padding:0;margin-top:6px">max_depth 감소 → 모델이 복잡한 패턴 학습 불가<br>891개 데이터에는 적당한 깊이가 더 효과적</div>
+        </div>
+        <div class="card-sm">
+          <div style="font-size:.83rem;font-weight:600;color:var(--accent)">💡 교훈</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-top:4px">소규모 데이터에서는 단순함이 강점. 피처 추가보다 기존 피처 품질 개선이 우선</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 25 -->
+<div class="slide" data-slide="25">
+  <div class="slide-num-badge">25 / 36</div>
+  <div class="slide-title">🔄 v3 — v1 피처 + 정규화 강화</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">v3 변경사항</div>
+          <div class="bullet" style="color:var(--green)">v2에서 추가한 피처 제거 (v1 피처셋 복원)</div>
+          <div class="bullet" style="color:var(--yellow)">강한 정규화 유지</div>
+          <div class="bullet" style="color:var(--green)">TicketFreq 버그 수정 유지</div>
+        </div>
+        <div class="kpi" style="background:var(--card);border:1px solid var(--yellow)">
+          <div class="val" style="color:var(--yellow)">0.76794</div>
+          <div class="lbl">Public Score (v2보다 개선, v1보다 낮음)</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">비교</div>
+          <table style="font-size:.83rem">
+            <tr><th>버전</th><th>Public Score</th><th>차이</th></tr>
+            <tr><td>v1 (기준)</td><td>0.77033</td><td>—</td></tr>
+            <tr><td style="color:var(--red)">v2</td><td style="color:var(--red)">0.76315</td><td style="color:var(--red)">-0.00718</td></tr>
+            <tr><td style="color:var(--yellow)">v3</td><td style="color:var(--yellow)">0.76794</td><td style="color:var(--yellow)">-0.00239</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">🧪 실험 분리 분석</div>
+          <div style="font-size:.85rem;margin:8px 0">
+            <span style="color:var(--green)">✅ 효과 있음</span>: TicketFreq 버그 수정 (+)
+          </div>
+          <div style="font-size:.85rem;margin:8px 0">
+            <span style="color:var(--red)">❌ 효과 없음</span>: 강한 정규화 (-)
+          </div>
+          <div class="term-explain" style="margin-top:8px">두 효과가 상충(Trade-off)하여 v1보다 낮은 결과<br>→ 각 변경을 독립적으로 테스트해야 했음</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">📌 실험 설계의 교훈</div>
+          <p style="font-size:.85rem">한 번에 여러 변경을 하면 각 변경의 효과를 알 수 없음</p>
+          <div class="term-explain" style="margin-top:6px"><strong>Ablation Study</strong>: 하나씩 변경하며 효과를 측정하는 실험 방법론 → v4에서 적용</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 26 -->
+<div class="slide" data-slide="26">
+  <div class="slide-num-badge">26 / 36</div>
+  <div class="slide-title">✨ v4 — TicketFreq 버그 수정만 적용 · 최고 점수!</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="card" style="border-color:var(--green)">
+          <div style="font-weight:600;color:var(--green);margin-bottom:8px">v4 변경사항 (딱 하나만!)</div>
+          <div class="bullet" style="color:var(--text)">v1 피처셋 유지</div>
+          <div class="bullet" style="color:var(--text)">v1 하이퍼파라미터 유지 (정규화 원복)</div>
+          <div class="bullet" style="color:var(--green);font-weight:600">TicketFreq만 수정: 개별 계산 → 합쳐서 계산</div>
+        </div>
+        <div class="kpi" style="background:linear-gradient(135deg,#1a3a2a,#1e293b);border:2px solid var(--green)">
+          <div class="val" style="color:var(--green);font-size:2.2rem">0.77511</div>
+          <div class="lbl" style="color:var(--green)">최고 점수 달성! (+0.00478 vs v1)</div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px">
+        <div class="highlight-box" style="border-color:var(--yellow)">
+          <div style="font-weight:700;color:var(--yellow);margin-bottom:8px">🐛 TicketFreq 버그란?</div>
+          <div style="font-size:.83rem;margin-bottom:6px">
+            <strong>문제</strong>: train에서만 TicketFreq 계산<br>
+            → test에 없는 티켓의 빈도가 다름
+          </div>
+          <div style="background:#0f172a;border-radius:6px;padding:8px;font-size:.78rem">
+            <div style="color:var(--red)">❌ 버그: CA 2144 티켓</div>
+            <div style="color:var(--muted);padding-left:12px">train: 6명, test: 2명 (각각 계산)</div>
+            <div style="color:var(--green);margin-top:6px">✅ 수정: CA 2144 티켓</div>
+            <div style="color:var(--muted);padding-left:12px">train+test 합계: 8명 (함께 계산)</div>
+          </div>
+          <div class="term-explain" style="margin-top:8px">훈련과 추론 시 피처 분포 불일치 → 모델 혼란 → 성능 저하</div>
+        </div>
+        <div class="card" style="text-align:center">
+          <div style="font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:6px">💡 핵심 교훈</div>
+          <p style="font-size:.88rem">화려한 개선보다 <strong style="color:var(--green)">버그 수정</strong>이 더 큰 효과!</p>
+          <div style="margin-top:8px;font-size:.82rem;color:var(--muted)">새 피처 추가 효과: <span style="color:var(--red)">-0.007</span> vs 버그 수정 효과: <span style="color:var(--green)">+0.005</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 27 -->
+<div class="slide" data-slide="27">
+  <div class="slide-num-badge">27 / 36</div>
+  <div class="slide-title">🔬 Optuna — 자동 하이퍼파라미터 최적화</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Optuna란?</div>
+          <div class="term-explain" style="border:none;padding:0">
+            <span style="color:var(--accent);font-weight:600">Optuna</span>: 베이지안 최적화 기반 하이퍼파라미터 탐색 라이브러리<br><br>
+            <span style="color:var(--green);font-weight:600">베이지안 최적화(Bayesian Optimization)</span>: 이전 시도 결과를 학습해 더 유망한 영역 탐색 → 단순 그리드 탐색보다 훨씬 효율적
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">실험 규모</div>
+          <div style="font-size:.85rem"><span style="color:var(--accent)">60 trials</span> × <span style="color:var(--green)">2 모델</span> (XGB, LGBM)</div>
+          <div class="muted" style="margin-top:4px">총 120회 최적화 시도</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px;color:var(--yellow)">발견된 공통 패턴</div>
+          <div class="bullet" style="font-size:.83rem">낮은 학습률(lr) + 많은 트리</div>
+          <div class="bullet" style="font-size:.83rem">XGB: <code>lr=0.016</code>, <code>n_est=498</code></div>
+          <div class="bullet" style="font-size:.83rem">LGBM: <code>lr=0.010</code>, <code>n_est=569</code></div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px">
+        <div class="grid-2" style="gap:10px">
+          <div class="kpi">
+            <div class="val" style="color:var(--green)">84.73-84.96%</div>
+            <div class="lbl">Optuna CV 점수 (기존 83.5%)</div>
+          </div>
+          <div class="kpi">
+            <div class="val" style="color:var(--red)">0.76315</div>
+            <div class="lbl">Public Score (v4보다 낮음!)</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:var(--red)">
+          <div style="font-weight:600;color:var(--red);margin-bottom:8px">🚨 역설: CV는 높은데 Public은 낮음!</div>
+          <p style="font-size:.85rem">원인: <strong>CV 자체에 과적합!</strong></p>
+          <div class="term-explain" style="margin-top:6px">891개 소규모 데이터에서 60번 탐색 = 과도<br>→ 탐색 과정에서 훈련 데이터에 특화된 파라미터 선택<br>→ Public 데이터에서 일반화 실패<br><br><strong>권장</strong>: 소규모 데이터에서 trials 수 20-30개로 제한</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 28 -->
+<div class="slide" data-slide="28">
+  <div class="slide-num-badge">28 / 36</div>
+  <div class="slide-title">📊 전체 실험 결과 종합</div>
+  <div class="slide-content">
+    <div class="flex-col" style="gap:16px">
+      <div class="card" style="padding:16px">
+        <table>
+          <tr>
+            <th>버전</th><th>주요 변경</th><th>CV 점수</th><th>Public Score</th><th>v1 대비</th>
+          </tr>
+          <tr>
+            <td style="color:var(--accent);font-weight:600">v1</td>
+            <td>기본 스태킹 앙상블</td>
+            <td>83.5%</td>
+            <td style="color:var(--accent)">0.77033</td>
+            <td style="color:var(--muted)">기준</td>
+          </tr>
+          <tr>
+            <td style="color:var(--red);font-weight:600">v2</td>
+            <td>새 피처 + 강한 정규화</td>
+            <td>83.4%</td>
+            <td style="color:var(--red)">0.76315</td>
+            <td style="color:var(--red)">↓ -0.00718</td>
+          </tr>
+          <tr>
+            <td style="color:var(--yellow);font-weight:600">v3</td>
+            <td>v1 피처 + 정규화 강화</td>
+            <td>83.6%</td>
+            <td style="color:var(--yellow)">0.76794</td>
+            <td style="color:var(--yellow)">↓ -0.00239</td>
+          </tr>
+          <tr style="background:rgba(74,222,128,0.08)">
+            <td style="color:var(--green);font-weight:700">v4 ⭐</td>
+            <td style="color:var(--green)">TicketFreq 버그 수정만</td>
+            <td>83.5%</td>
+            <td style="color:var(--green);font-weight:700">0.77511</td>
+            <td style="color:var(--green);font-weight:700">↑ +0.00478</td>
+          </tr>
+          <tr>
+            <td style="color:var(--red);font-weight:600">v5</td>
+            <td>Optuna 고도 튜닝</td>
+            <td style="color:var(--green)">84.7%</td>
+            <td style="color:var(--red)">0.76315</td>
+            <td style="color:var(--red)">↓ -0.00718</td>
+          </tr>
+        </table>
+      </div>
+      <div class="grid-2" style="gap:16px">
+        <div class="highlight-box" style="border-color:var(--green)">
+          <div style="font-weight:700;color:var(--green);margin-bottom:8px">🏆 핵심 발견</div>
+          <p style="font-size:.88rem">CV 점수와 Public 점수가 항상 일치하지 않음</p>
+          <div class="term-explain" style="margin-top:6px">v5: CV 84.7% (가장 높음) → Public 0.763 (낮음)<br>v4: CV 83.5% (보통) → Public 0.775 (가장 높음!)</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">📈 Public Score 변화</div>
+          <svg viewBox="0 0 260 80" style="width:100%">
+            <!-- timeline -->
+            <line x1="20" y1="60" x2="240" y2="60" stroke="#334155" stroke-width="1"/>
+            <!-- points -->
+            <circle cx="40" cy="25" r="5" fill="#38bdf8"/>
+            <circle cx="90" cy="45" r="5" fill="#f87171"/>
+            <circle cx="140" cy="35" r="5" fill="#fbbf24"/>
+            <circle cx="190" cy="15" r="7" fill="#4ade80"/>
+            <circle cx="230" cy="45" r="5" fill="#f87171"/>
+            <!-- connecting line -->
+            <polyline points="40,25 90,45 140,35 190,15 230,45" fill="none" stroke="#334155" stroke-width="1.5" stroke-dasharray="5,3"/>
+            <!-- labels -->
+            <text x="40" y="75" fill="#38bdf8" font-size="8" text-anchor="middle">v1</text>
+            <text x="90" y="75" fill="#f87171" font-size="8" text-anchor="middle">v2</text>
+            <text x="140" y="75" fill="#fbbf24" font-size="8" text-anchor="middle">v3</text>
+            <text x="190" y="75" fill="#4ade80" font-size="8" text-anchor="middle">v4⭐</text>
+            <text x="230" y="75" fill="#f87171" font-size="8" text-anchor="middle">v5</text>
+            <!-- score labels -->
+            <text x="40" y="18" fill="#38bdf8" font-size="7" text-anchor="middle">0.770</text>
+            <text x="90" y="38" fill="#f87171" font-size="7" text-anchor="middle">0.763</text>
+            <text x="140" y="28" fill="#fbbf24" font-size="7" text-anchor="middle">0.768</text>
+            <text x="190" y="8" fill="#4ade80" font-size="7" text-anchor="middle">0.775</text>
+            <text x="230" y="38" fill="#f87171" font-size="7" text-anchor="middle">0.763</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 29 -->
+<div class="slide" data-slide="29">
+  <div class="slide-num-badge">29 / 36</div>
+  <div class="slide-title">💡 이 프로젝트에서 얻은 핵심 인사이트</div>
+  <div class="slide-content">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="card" style="border-left:3px solid var(--green)">
+        <div style="font-weight:700;color:var(--green);margin-bottom:6px">① 버그 수정 &gt; 새 피처 추가</div>
+        <div style="font-size:.83rem;color:var(--muted)">TicketFreq 수정 <span style="color:var(--green)">+0.005</span> vs 새 피처 추가 <span style="color:var(--red)">-0.007</span></div>
+        <div style="font-size:.82rem;margin-top:4px">데이터 품질이 모델 복잡도보다 중요</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--accent)">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px">② 소규모 데이터 = 단순함이 강점</div>
+        <div style="font-size:.83rem;color:var(--muted)">891개 데이터에서는 과도한 피처 &amp; 복잡한 모델 = 역효과</div>
+        <div style="font-size:.82rem;margin-top:4px">차원의 저주 항상 의식</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--yellow)">
+        <div style="font-weight:700;color:var(--yellow);margin-bottom:6px">③ CV vs Public 갭 모니터링 필수</div>
+        <div style="font-size:.83rem;color:var(--muted)">6%p 이상 갭 → 과적합 의심 신호</div>
+        <div style="font-size:.82rem;margin-top:4px">CV 점수 향상 ≠ Public 점수 향상</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--red)">
+        <div style="font-weight:700;color:var(--red);margin-bottom:6px">④ Optuna도 과적합 가능</div>
+        <div style="font-size:.83rem;color:var(--muted)">소규모 데이터 + 많은 trials = CV에 과적합</div>
+        <div style="font-size:.82rem;margin-top:4px">trials 수 데이터 크기에 맞게 조절</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--purple)">
+        <div style="font-weight:700;color:var(--purple);margin-bottom:6px">⑤ 핵심 3대 피처</div>
+        <div style="font-size:.83rem"><span style="color:var(--accent)">Sex</span> + <span style="color:var(--green)">Title</span> + <span style="color:var(--purple)">Pclass</span></div>
+        <div style="font-size:.82rem;color:var(--muted);margin-top:4px">타이타닉 예측의 핵심. 이 3개만으로 강한 모델 가능</div>
+      </div>
+      <div class="card" style="border-left:3px solid var(--orange)">
+        <div style="font-weight:700;color:var(--orange);margin-bottom:6px">⑥ 정규화 ≠ 항상 좋음</div>
+        <div style="font-size:.83rem;color:var(--muted)">강한 정규화는 데이터 크기에 맞게 조절 필요</div>
+        <div style="font-size:.82rem;margin-top:4px">⑦ 데이터 누수 방지 &gt; 모든 피처 공학</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 30 -->
+<div class="slide" data-slide="30">
+  <div class="slide-num-badge">30 / 36</div>
+  <div class="slide-title">🏆 v7 OOF 가족 생존율 — 신기록 달성</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:16px">
+      <div class="flex-col" style="gap:14px">
+        <div class="card" style="border-color:var(--green)">
+          <div style="font-weight:700;color:var(--green);margin-bottom:10px">✅ 핵심 개선: OOF 인코딩</div>
+          <div class="term-explain" style="margin-bottom:10px"><strong>OOF(Out-of-Fold)</strong>: K-Fold 교차검증 과정에서, 각 폴드의 검증 데이터에 대해 훈련 데이터만으로 계산한 통계값을 사용하는 기법. 데이터 누수(leakage)를 원천 방지.</div>
+          <div class="bullet"><strong>Surname 그룹별</strong> OOF 생존율 → 새 피처</div>
+          <div class="bullet"><strong>Ticket 그룹별</strong> OOF 생존율 → 새 피처</div>
+          <div class="bullet">테스트셋: 전체 훈련 데이터 기준 계산</div>
+        </div>
+        <div class="card" style="background:#0f172a">
+          <div class="stack-label">v6 실패 원인 (누수)</div>
+          <div style="font-size:.83rem;margin-top:6px">전체 훈련으로 FamilySurvivalRate 계산<br>→ CV 88.5% <span class="red">(과대평가)</span> → Public 0.76555 <span class="red">(하락)</span></div>
+        </div>
+        <div class="card" style="background:#0f172a;border-color:var(--green)">
+          <div class="stack-label">v7 OOF 방식 (올바른 구현)</div>
+          <div style="font-size:.83rem;margin-top:6px">K-Fold OOF로 누수 차단<br>→ CV 85.18% <span class="green">(현실적)</span> → Public <span class="green" style="font-weight:700">0.77751 ★신기록</span></div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div style="font-weight:600;font-size:.9rem;margin-bottom:4px">버전별 점수 비교</div>
+        <div class="bar-h"><div class="label">v4 (베이스)</div><div class="bar-track"><div class="bar-fill" style="width:71%;background:#38bdf8">0.77511</div></div></div>
+        <div class="bar-h"><div class="label">v5 Optuna</div><div class="bar-track"><div class="bar-fill" style="width:66%;background:#f87171">0.76276</div></div></div>
+        <div class="bar-h"><div class="label">v6 Family</div><div class="bar-track"><div class="bar-fill" style="width:65%;background:#f87171">0.76555</div></div></div>
+        <div class="bar-h"><div class="label">v7 OOF ★</div><div class="bar-track"><div class="bar-fill" style="width:74%;background:#4ade80;font-weight:800">0.77751</div></div></div>
+        <div class="highlight-box" style="text-align:center;margin-top:8px">
+          <div style="font-size:.8rem;color:var(--muted)">v4 → v7 개선</div>
+          <div style="font-size:1.6rem;font-weight:800;color:var(--green)">+0.00240</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:2px">418명 기준 약 1명 더 정확히 예측</div>
+        </div>
+        <div class="card" style="border-color:var(--yellow)">
+          <div style="font-weight:600;color:var(--yellow);margin-bottom:6px">핵심 교훈</div>
+          <div style="font-size:.82rem">Leakage(누수)가 있는 높은 CV는 오히려 독이 된다. OOF 방식은 낮아 보이지만 <strong>실제 점수와 더 잘 일치</strong>한다.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 31 -->
+<div class="slide" data-slide="31">
+  <div class="slide-num-badge">31 / 36</div>
+  <div class="slide-title">🧪 v8 실험 설계 — 3가지 방향</div>
+  <div class="slide-content">
+    <div class="grid-3" style="gap:14px;margin-bottom:14px">
+      <div class="card" style="border-color:var(--accent)">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:8px">A. OOF 피처 스태킹</div>
+        <div style="font-size:.82rem;margin-bottom:8px">v7에서 추가된 2개 OOF 피처를 스태킹 앙상블 전체 레이어에 적용</div>
+        <div style="background:#0f172a;border-radius:6px;padding:8px;font-size:.78rem">
+          <div style="color:var(--muted)">Feature 17개 → <span style="color:var(--green)">19개</span></div>
+          <div style="margin-top:4px">+ Surname_OOF_Survival</div>
+          <div>+ Ticket_OOF_Survival</div>
+        </div>
+        <div style="margin-top:8px;font-size:.78rem;color:var(--muted)">6개 베이스 모델 → LR 메타러너</div>
+      </div>
+      <div class="card" style="border-color:var(--yellow)">
+        <div style="font-weight:700;color:var(--yellow);margin-bottom:8px">B. LGBM 단독 Low-LR</div>
+        <div style="font-size:.82rem;margin-bottom:8px">Optuna 2회 공통 발견: 낮은 LR + 많은 트리 = 안정적 성능</div>
+        <div style="background:#0f172a;border-radius:6px;padding:8px;font-size:.78rem;font-family:monospace">
+          <div>n_estimators = 569</div>
+          <div>num_leaves = 33</div>
+          <div>learning_rate = <span style="color:var(--yellow)">0.010</span></div>
+        </div>
+        <div style="margin-top:8px;font-size:.78rem;color:var(--muted)">v8 피처(19개) 사용</div>
+      </div>
+      <div class="card" style="border-color:var(--purple)">
+        <div style="font-weight:700;color:var(--purple);margin-bottom:8px">C. 다중 랜덤 시드 앙상블</div>
+        <div style="font-size:.82rem;margin-bottom:8px">동일 모델을 다른 시드로 여러 번 학습 → 분산 감소</div>
+        <div style="background:#0f172a;border-radius:6px;padding:8px;font-size:.78rem">
+          <div style="color:var(--muted)">Seeds: [42, 7, 21, 99, 123]</div>
+          <div>× XGBoost + LightGBM</div>
+          <div style="color:var(--purple);margin-top:4px">= 10개 모델 평균</div>
+        </div>
+        <div style="margin-top:8px;font-size:.78rem;color:var(--muted)">분산 감소(Variance Reduction) 효과</div>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--green)">
+      <div style="font-weight:700;color:var(--green);margin-bottom:8px">D. 가중 결합 앙상블 (Combined)</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:.85rem"><span style="color:var(--accent);font-weight:700">40%</span> × OOF 스태킹</div>
+        <div style="color:var(--muted)">+</div>
+        <div style="font-size:.85rem"><span style="color:var(--yellow);font-weight:700">30%</span> × LGBM Low-LR</div>
+        <div style="color:var(--muted)">+</div>
+        <div style="font-size:.85rem"><span style="color:var(--purple);font-weight:700">30%</span> × 다중 시드 앙상블</div>
+        <div style="color:var(--muted)">→</div>
+        <div style="font-size:.85rem;color:var(--green);font-weight:700">최종 예측 (threshold=0.5)</div>
+      </div>
+      <div style="font-size:.78rem;color:var(--muted);margin-top:6px">다양한 모델의 강점을 결합 → 단일 모델보다 안정적인 일반화 성능 기대</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 32 -->
+<div class="slide" data-slide="32">
+  <div class="slide-num-badge">32 / 36</div>
+  <div class="slide-title">📊 v8 CV 결과 — 핵심 발견</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:16px">
+      <div class="flex-col" style="gap:12px">
+        <div style="font-weight:600;font-size:.9rem">5-Fold CV 정확도 비교</div>
+        <div class="bar-h"><div class="label" style="width:160px">LGBM Low-LR v8 ★</div><div class="bar-track"><div class="bar-fill" style="width:85%;background:#4ade80;font-weight:800">84.51%</div></div><div class="val green">±0.77%</div></div>
+        <div class="bar-h"><div class="label" style="width:160px">XGB OOF v8</div><div class="bar-track"><div class="bar-fill" style="width:83%;background:#38bdf8">84.06%</div></div><div class="val" style="color:var(--accent)">±1.56%</div></div>
+        <div class="bar-h"><div class="label" style="width:160px">Stacking v8</div><div class="bar-track"><div class="bar-fill" style="width:81%;background:#a78bfa">83.50%</div></div><div class="val" style="color:var(--purple)">±1.70%</div></div>
+        <div class="bar-h"><div class="label" style="width:160px">Multi-seed OOF</div><div class="bar-track"><div class="bar-fill" style="width:79%;background:#fb923c">82.94%</div></div><div class="val" style="color:var(--orange)">-</div></div>
+        <div class="bar-h"><div class="label" style="width:160px">LGBM v4 기준</div><div class="bar-track"><div class="bar-fill" style="width:79%;background:#64748b">82.15%</div></div><div class="val" style="color:var(--muted)">±1.18%</div></div>
+        <div class="card" style="border-color:var(--green);margin-top:4px">
+          <div style="font-weight:600;color:var(--green);margin-bottom:6px">최우선 제출 후보</div>
+          <div style="font-size:.85rem"><strong>LGBM Low-LR v8</strong>: CV 84.51% + 분산 <span class="green">0.77%로 최소</span></div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">낮은 분산 = CV와 Public Score 갭이 작을 가능성 ↑</div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div class="card" style="border-color:var(--accent)">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:8px">OOF 피처 효과 분석</div>
+          <table>
+            <tr><th>피처</th><th>설명</th><th>효과</th></tr>
+            <tr><td><code>Surname_OOF</code></td><td>성씨별 생존율</td><td class="green">+가족 맥락</td></tr>
+            <tr><td><code>Ticket_OOF</code></td><td>티켓 그룹별 생존율</td><td class="green">+동반자 정보</td></tr>
+          </table>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:8px">LGBM 기준 v4(17개) → v8(19개): +2.36%p CV 향상</div>
+        </div>
+        <div class="card" style="border-color:var(--yellow)">
+          <div style="font-weight:600;color:var(--yellow);margin-bottom:6px">Low-LR의 장점</div>
+          <div class="bullet" style="font-size:.82rem">낮은 학습률 → 더 많은 트리로 천천히 수렴</div>
+          <div class="bullet" style="font-size:.82rem">일반화 성능 향상, 과적합 억제</div>
+          <div class="bullet" style="font-size:.82rem">분산 0.77% ← 역대 최소</div>
+        </div>
+        <div class="card" style="background:#0f172a">
+          <div style="font-weight:600;margin-bottom:8px">생성된 제출 파일 4개</div>
+          <div style="font-size:.78rem;font-family:monospace;color:var(--accent)">submission_v8_oof_stacking.csv</div>
+          <div style="font-size:.78rem;font-family:monospace;color:var(--yellow);margin-top:3px">submission_v8_lgbm_lowlr.csv ← 최우선</div>
+          <div style="font-size:.78rem;font-family:monospace;color:var(--purple);margin-top:3px">submission_v8_multiseed.csv</div>
+          <div style="font-size:.78rem;font-family:monospace;color:var(--green);margin-top:3px">submission_v8_combined.csv</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 33 -->
+<div class="slide" data-slide="33">
+  <div class="slide-num-badge">33 / 36</div>
+  <div class="slide-title">📈 점수대별 의미 — Titanic 한계 분석</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:16px">
+      <div class="flex-col" style="gap:10px">
+        <div style="font-weight:600;font-size:.9rem;margin-bottom:2px">Public Score 구간별 실제 의미</div>
+        <div class="card" style="padding:12px;border-left:3px solid #64748b">
+          <div style="font-weight:700;font-size:.9rem">0.765 — 성별 Baseline</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">여성 74% vs 남성 19% 생존율. gender_submission.csv 실제 제출 결과 0.76555</div>
+        </div>
+        <div class="card" style="padding:12px;border-left:3px solid #38bdf8">
+          <div style="font-weight:700;font-size:.9rem">0.775~0.785 — 정상적인 ML</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">표준 피처 엔지니어링 완성 수준. Kaggle 리더보드 상위 50%컷 구간. Title + FamilySize + Cabin 추가 시 달성 가능</div>
+        </div>
+        <div class="card" style="padding:12px;border-left:3px solid #4ade80">
+          <div style="font-weight:700;font-size:.9rem">0.800~0.810 — 순수 ML 거의 한계</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">418명 중 약 75~85명은 어떤 패턴으로도 예측 불가 (우연, 개인 결단). 노이즈 하한 ~18% → 정확도 상한 ~82%</div>
+        </div>
+        <div class="card" style="padding:12px;border-left:3px solid #f87171">
+          <div style="font-weight:700;font-size:.9rem">0.820+ — 사실상 Leakage</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">Encyclopedia Titanica 실제 생존 기록 DB 대조. 이름 기반 정답 역추론. Kaggle이 방치하는 편법</div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:10px">우리 프로젝트 위치</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="font-size:2.2rem;font-weight:800;color:var(--green)">0.78708</div>
+            <div>
+              <div style="font-size:.85rem;font-weight:600">v10 신기록 ★</div>
+              <div style="font-size:.78rem;color:var(--muted)">정상적인 ML 구간 상위</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;font-size:.83rem">
+            <div style="color:var(--muted);margin-bottom:4px">다음 목표: 0.790 돌파</div>
+            <div class="bullet" style="font-size:.78rem">OOF 피처 다양화 (Ticket prefix, Age×Sex)</div>
+            <div class="bullet" style="font-size:.78rem">k값 그리드 서치 + 2-level stacking</div>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">현실적 목표 분포</div>
+          <div style="display:flex;align-items:flex-end;gap:8px;height:80px;padding-top:10px">
+            <div style="flex:1;background:#334155;border-radius:4px 4px 0 0;height:40%;position:relative">
+              <div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--muted);white-space:nowrap">0.765</div>
+            </div>
+            <div style="flex:1;background:#38bdf8;border-radius:4px 4px 0 0;height:75%;position:relative">
+              <div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--accent);white-space:nowrap">현재</div>
+            </div>
+            <div style="flex:1;background:#4ade80;border-radius:4px 4px 0 0;height:90%;position:relative">
+              <div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--green);white-space:nowrap">목표</div>
+            </div>
+            <div style="flex:1;background:#fbbf24;border-radius:4px 4px 0 0;height:100%;position:relative">
+              <div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--yellow);white-space:nowrap">한계</div>
+            </div>
+            <div style="flex:1;background:#f87171;border-radius:4px 4px 0 0;height:100%;position:relative">
+              <div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.7rem;color:var(--red);white-space:nowrap">편법</div>
+            </div>
+          </div>
+          <div style="margin-top:24px;font-size:.78rem;color:var(--muted);display:flex;justify-content:space-between">
+            <span>0.765</span><span>0.778</span><span>0.785</span><span>0.810</span><span>0.820+</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 34 -->
+<div class="slide" data-slide="34">
+  <div class="slide-num-badge">34 / 36</div>
+  <div class="slide-title">🎓 최종 결론 &amp; 학습 정리</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="card" style="border-color:var(--green)">
+          <div style="font-weight:700;color:var(--green);margin-bottom:12px">✅ 달성 결과 (v10 기준)</div>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            <div style="font-size:2rem;font-weight:800;color:var(--green)">0.78708</div>
+            <div>
+              <div style="font-size:.85rem">최고 Public Score (v10) ★</div>
+              <div class="muted">v4(0.77511) 대비 +0.01197</div>
+            </div>
+          </div>
+          <div class="bullet">EDA → 모델링 → 추론 전 파이프라인 자동화</div>
+          <div class="bullet">OOF 누수 방지 인코딩 (Sex+Surname, Ticket)</div>
+          <div class="bullet">Stacking이 단독 모델보다 항상 우수</div>
+          <div class="bullet">10가지 버전 체계적 실험 및 분석</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">📚 핵심 교훈 정리</div>
+          <table style="font-size:.78rem">
+            <tr><th>실험</th><th>결과</th><th>이유</th></tr>
+            <tr><td>TicketFreq 버그 수정</td><td class="green">+0.005</td><td>분포 일치</td></tr>
+            <tr><td>IsChild 등 새 피처</td><td class="red">-0.007</td><td>소규모 노이즈</td></tr>
+            <tr><td>Optuna 강한 튜닝</td><td class="red">-0.013</td><td>CV 과적합</td></tr>
+            <tr><td>OOF 생존율 인코딩</td><td class="green">+0.002</td><td>누수 없는 정보</td></tr>
+            <tr><td>Sex+Surname OOF (v9)</td><td class="green">+0.002</td><td>성별 분리로 오분류 방지</td></tr>
+            <tr><td>LGBM→LowLR 베이스 (v10)</td><td class="green">+0.007</td><td>스태킹 다양성 기여</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px">
+        <div class="card" style="border-color:var(--yellow)">
+          <div style="font-weight:700;color:var(--yellow);margin-bottom:8px">🚀 다음 실험 방향</div>
+          <ol class="num-list">
+            <li><strong>OOF 피처 다양화</strong>: Ticket prefix 그룹, Age구간×Sex</li>
+            <li><strong>k값 그리드 서치</strong>: SexSurname k=[1,2,3,5,7,10] × Ticket k=[1,3,5,7,10]</li>
+            <li><strong>2-level stacking</strong>: 베이스 → 중간 → 메타</li>
+            <li>피처 선택(Feature Selection) — SHAP 기반</li>
+          </ol>
+        </div>
+        <div class="highlight-box" style="text-align:center">
+          <div style="font-size:.85rem;color:var(--muted);margin-bottom:4px">순수 ML 달성 가능 범위</div>
+          <div style="font-size:1.8rem;font-weight:800;color:var(--yellow)">0.785 ~ 0.810</div>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:4px">데이터 노이즈(~18%) 이 이상은 어떤 ML도 한계</div>
+        </div>
+        <div style="text-align:center;margin-top:8px">
+          <div style="font-size:2rem">🚢</div>
+          <div style="font-size:1.2rem;font-weight:700;color:var(--accent);margin-top:8px">감사합니다!</div>
+          <div style="font-size:.85rem;color:var(--muted);margin-top:4px">데이터 과학의 여정은 계속됩니다</div>
+          <div class="tag" style="margin-top:8px">v11 — OOF 피처 다양화 진행 중</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 35 -->
+<div class="slide" data-slide="35">
+  <div class="slide-num-badge">35 / 36</div>
+  <div class="slide-title">🔍 v9 Sex+Surname OOF — 핵심 발견</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:16px">
+      <div class="flex-col" style="gap:12px">
+        <div class="card" style="border-color:var(--red)">
+          <div style="font-weight:700;color:var(--red);margin-bottom:8px">v8 OOF 버그: n=1 성씨 문제</div>
+          <div style="font-size:.83rem;margin-bottom:8px">v8에서 raw OOF (스무딩 없음) 사용 시:<br>훈련 데이터에 n=1 성씨가 있고 그 사람이 사망 → <strong>OOF = 0.0</strong></div>
+          <div style="background:#0f172a;border-radius:6px;padding:10px;font-size:.8rem">
+            <div style="color:var(--red)">예: Miss. Olsen (3등석 여성) — 훈련에서 같은 성씨 1명이 사망</div>
+            <div style="margin-top:4px">Surname_OOF = 0.0 → <span style="color:var(--red)">사망 예측 (오분류)</span></div>
+            <div style="margin-top:4px;color:var(--muted)">실제: 3등석 여성 생존율 ~50%</div>
+          </div>
+        </div>
+        <div class="card" style="border-color:var(--green)">
+          <div style="font-weight:700;color:var(--green);margin-bottom:8px">v9 두 가지 핵심 수정</div>
+          <div class="bullet" style="font-size:.83rem"><strong>Sex+Surname 분리</strong>: <code>female_Olsen</code> ≠ <code>male_Olsen</code></div>
+          <div style="font-size:.78rem;color:var(--muted);margin-left:16px;margin-bottom:8px">남성 사망 패턴이 여성 예측에 영향 차단</div>
+          <div class="bullet" style="font-size:.83rem"><strong>Bayesian Smoothing</strong> (k=3~5 적용)</div>
+          <div style="background:#0f172a;border-radius:6px;padding:8px;font-size:.78rem;margin-top:6px;font-family:monospace">
+            smoothed = (n×mean + k×global_mean) / (n+k)<br>
+            n=1, survival=0%: (0 + 3×0.384)/(1+3) = <span style="color:var(--green)">0.29</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div style="font-weight:600;font-size:.9rem">v8 → v9 점수 변화</div>
+        <div class="bar-h"><div class="label">v8 OOF raw</div><div class="bar-track"><div class="bar-fill" style="width:72%;background:#38bdf8">0.77511</div></div></div>
+        <div class="bar-h"><div class="label">v9 stacking ★</div><div class="bar-track"><div class="bar-fill" style="width:76%;background:#4ade80;font-weight:800">0.77990</div></div></div>
+        <div class="highlight-box" style="text-align:center;margin-top:4px">
+          <div style="font-size:.8rem;color:var(--muted)">v8 → v9 개선</div>
+          <div style="font-size:1.6rem;font-weight:800;color:var(--green)">+0.00479</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:8px">v9 실험 비교 (10-seed 미사용)</div>
+          <table style="font-size:.78rem">
+            <tr><th>파일</th><th>CV</th><th>Public</th></tr>
+            <tr><td><strong>v9_stacking</strong> ★</td><td class="green">83.88%</td><td class="green">0.77990</td></tr>
+            <tr><td>v9_lgbm_multi</td><td>84.40%</td><td class="red">0.76794</td></tr>
+            <tr><td>v9_v7_or blend</td><td>-</td><td class="red">0.76315</td></tr>
+          </table>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:6px">Stacking이 solo LGBM 대비 Public +0.011 우세</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 36 -->
+<div class="slide" data-slide="36">
+  <div class="slide-num-badge">36 / 36</div>
+  <div class="slide-title">🏆 v10 스태킹 구조 개선 — 신기록 0.78708</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:16px">
+      <div class="flex-col" style="gap:12px">
+        <div class="card" style="border-color:var(--yellow)">
+          <div style="font-weight:700;color:var(--yellow);margin-bottom:8px">v10 핵심 변경사항</div>
+          <table style="font-size:.8rem">
+            <tr><th>항목</th><th>v9</th><th>v10</th></tr>
+            <tr><td>LGBM 베이스</td><td style="color:var(--muted)">lr=0.05, n=500</td><td class="green">lr=0.010, n=569</td></tr>
+            <tr><td>메타러너 C</td><td style="color:var(--muted)">C=1.0</td><td class="green">C=0.05</td></tr>
+            <tr><td>베이스 수</td><td style="color:var(--muted)">6개</td><td class="green">6개 (SVM 포함)</td></tr>
+          </table>
+          <div style="font-size:.78rem;color:var(--muted);margin-top:6px">LGBM solo로는 약하지만 <strong>베이스 모델로는 스태킹 다양성 기여</strong></div>
+        </div>
+        <div class="card" style="border-color:var(--accent)">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">10-seed 반복 검증 (핵심 교훈)</div>
+          <table style="font-size:.78rem">
+            <tr><th>설정</th><th>단일seed CV</th><th>10-seed CV</th></tr>
+            <tr><td>C=0.05</td><td class="green">+0.79%p</td><td class="red">-0.09%p (노이즈!)</td></tr>
+            <tr><td>LGBM→LL+C=0.05</td><td>+0.34%p</td><td class="green">+0.24%p ★ 일관</td></tr>
+          </table>
+          <div style="font-size:.75rem;color:var(--yellow);margin-top:6px">단일 seed CV 차이는 노이즈 가능 → 반드시 10-seed로 확인</div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div style="font-weight:600;font-size:.9rem">전체 버전별 점수 추이</div>
+        <div class="bar-h"><div class="label" style="width:80px">v4 베이스</div><div class="bar-track"><div class="bar-fill" style="width:58%;background:#64748b">0.77511</div></div></div>
+        <div class="bar-h"><div class="label" style="width:80px">v7 OOF</div><div class="bar-track"><div class="bar-fill" style="width:63%;background:#38bdf8">0.77751</div></div></div>
+        <div class="bar-h"><div class="label" style="width:80px">v9 Sex+Sur</div><div class="bar-track"><div class="bar-fill" style="width:70%;background:#a78bfa">0.77990</div></div></div>
+        <div class="bar-h"><div class="label" style="width:80px">v10 LL+C ★</div><div class="bar-track"><div class="bar-fill" style="width:82%;background:#4ade80;font-weight:800">0.78708</div></div></div>
+        <div class="highlight-box" style="text-align:center">
+          <div style="font-size:.8rem;color:var(--muted)">v4 대비 총 개선</div>
+          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">+0.01197</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:2px">418명 기준 약 5명 더 정확히 예측</div>
+        </div>
+        <div class="card" style="border-color:var(--muted)">
+          <div style="font-weight:600;color:var(--muted);margin-bottom:6px">v11~v12 결과 (개선 없음)</div>
+          <div style="font-size:.78rem">OOF 피처 다양화(TicketPrefix/AgeSex): -0.6~0.8%p ❌</div>
+          <div style="font-size:.78rem;margin-top:3px">k값 그리드 서치(30조합): 5-seed +0.001 → 10-seed -0.001 (노이즈) ❌</div>
+          <div style="font-size:.75rem;color:var(--yellow);margin-top:4px">v10이 현재 최적화 한계에 근접한 것으로 판단</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11 -->
+<div class="slide" data-slide="11">
+  <div class="slide-num-badge">11 / 36</div>
+  <div class="slide-title">👨‍👩‍👧‍👦 가족 규모(FamilySize) 분석</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:6px">가족 규모별 생존율</div>
+        <div class="term-explain" style="margin-bottom:12px"><code>FamilySize = SibSp + Parch + 1</code> (본인 포함)</div>
+        <svg viewBox="0 0 280 180" style="width:100%">
+          <text x="55" y="38" fill="#94a3b8" font-size="10" text-anchor="end">혼자(1명)</text>
+          <rect x="60" y="22" width="60.8" height="22" rx="4" fill="#fbbf24"/>
+          <text x="126" y="37" fill="#fbbf24" font-size="11" font-weight="bold">30.4%</text>
+          <text x="55" y="72" fill="#94a3b8" font-size="10" text-anchor="end">소(2명)</text>
+          <rect x="60" y="56" width="110" height="22" rx="4" fill="#4ade80"/>
+          <text x="176" y="71" fill="#4ade80" font-size="11" font-weight="bold">55.0%</text>
+          <text x="55" y="106" fill="#94a3b8" font-size="10" text-anchor="end">소(3-4명)</text>
+          <rect x="60" y="90" width="120" height="22" rx="4" fill="#4ade80"/>
+          <text x="186" y="105" fill="#4ade80" font-size="11" font-weight="bold">60.0%</text>
+          <text x="55" y="140" fill="#94a3b8" font-size="10" text-anchor="end">대(5+명)</text>
+          <rect x="60" y="124" width="30" height="22" rx="4" fill="#f87171"/>
+          <text x="96" y="139" fill="#f87171" font-size="11" font-weight="bold">15%↓</text>
+          <line x1="60" y1="160" x2="260" y2="160" stroke="#334155" stroke-width="1"/>
+          <text x="60" y="173" fill="#94a3b8" font-size="9" text-anchor="middle">0%</text>
+          <text x="110" y="173" fill="#94a3b8" font-size="9" text-anchor="middle">25%</text>
+          <text x="160" y="173" fill="#94a3b8" font-size="9" text-anchor="middle">50%</text>
+          <text x="210" y="173" fill="#94a3b8" font-size="9" text-anchor="middle">75%</text>
+          <line x1="110" y1="18" x2="110" y2="160" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="160" y1="18" x2="160" y2="160" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="210" y1="18" x2="210" y2="160" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+        </svg>
+      </div>
+      <div class="flex-col" style="gap:12px;justify-content:center">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">🧩 왜 중간 크기 가족이 유리?</div>
+          <div class="bullet" style="font-size:.85rem">혼자: 정보 공유 없음, 도움 받기 어려움</div>
+          <div class="bullet" style="font-size:.85rem">소규모(2-4명): 탈출 조율 가장 유리</div>
+          <div class="bullet" style="font-size:.85rem">대규모(5+명): 가족 모으는 데 시간 소요 → 탈출 지연</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">🔧 파생 피처</div>
+          <table style="font-size:.82rem">
+            <tr><th>피처명</th><th>설명</th></tr>
+            <tr><td><code>IsAlone</code></td><td>혼자 탑승 여부 (0/1)</td></tr>
+            <tr><td><code>FamilySizeGroup</code></td><td>Alone / Small / Large</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <div style="font-size:.83rem;color:var(--muted)">IsAlone 생존율: <strong style="color:var(--yellow)">30.4%</strong> vs 동반자 있음: <strong style="color:var(--green)">50.5%</strong></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12 -->
+<div class="slide" data-slide="12">
+  <div class="slide-num-badge">12 / 36</div>
+  <div class="slide-title">⚓ 탑승항(Embarked) 분석</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:16px">탑승항별 생존율</div>
+        <svg viewBox="0 0 280 180" style="width:100%">
+          <text x="55" y="42" fill="#94a3b8" font-size="11" text-anchor="end">셰르부르(C)</text>
+          <rect x="60" y="26" width="110.8" height="26" rx="5" fill="#4ade80"/>
+          <text x="176" y="43" fill="#4ade80" font-size="12" font-weight="bold">55.4%</text>
+          <text x="55" y="94" fill="#94a3b8" font-size="11" text-anchor="end">사우샘프턴(S)</text>
+          <rect x="60" y="78" width="67.4" height="26" rx="5" fill="#fbbf24"/>
+          <text x="133" y="95" fill="#fbbf24" font-size="12" font-weight="bold">33.7%</text>
+          <text x="55" y="146" fill="#94a3b8" font-size="11" text-anchor="end">퀸스타운(Q)</text>
+          <rect x="60" y="130" width="77.8" height="26" rx="5" fill="#38bdf8"/>
+          <text x="143" y="147" fill="#38bdf8" font-size="12" font-weight="bold">38.9%</text>
+          <line x1="60" y1="165" x2="260" y2="165" stroke="#334155" stroke-width="1"/>
+          <text x="60" y="178" fill="#94a3b8" font-size="9" text-anchor="middle">0%</text>
+          <text x="110" y="178" fill="#94a3b8" font-size="9" text-anchor="middle">25%</text>
+          <text x="160" y="178" fill="#94a3b8" font-size="9" text-anchor="middle">50%</text>
+          <text x="210" y="178" fill="#94a3b8" font-size="9" text-anchor="middle">75%</text>
+          <line x1="110" y1="22" x2="110" y2="165" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="160" y1="22" x2="160" y2="165" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+          <line x1="210" y1="22" x2="210" y2="165" stroke="#334155" stroke-width="1" stroke-dasharray="4,3"/>
+        </svg>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">🤔 셰르부르가 높은 이유?</div>
+          <p style="font-size:.85rem">1등석 탑승객 비율이 셰르부르에서 가장 높음!</p>
+          <div class="term-explain" style="margin-top:8px">
+            <span style="color:var(--accent);font-weight:600">교란 변수(Confounding Variable)</span>: 탑승항이 직접 생존에 영향을 준 게 아니라 <strong>Pclass를 통해 간접 영향</strong>을 미침<br>→ 진짜 원인은 Pclass!
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">📊 탑승항별 Pclass 분포</div>
+          <table style="font-size:.82rem">
+            <tr><th>탑승항</th><th>1등석 비율</th><th>3등석 비율</th></tr>
+            <tr><td style="color:var(--green)">C (셰르부르)</td><td style="color:var(--accent)">48.2%</td><td>32.1%</td></tr>
+            <tr><td style="color:var(--yellow)">S (사우샘프턴)</td><td>20.5%</td><td style="color:var(--red)">55.0%</td></tr>
+            <tr><td style="color:var(--accent)">Q (퀸스타운)</td><td>2.7%</td><td style="color:var(--red)">93.2%</td></tr>
+          </table>
+        </div>
+        <div class="card-sm">
+          <div style="font-size:.82rem">결측값 2건 → 최빈값 <code>'S'</code>로 대체 (전체 72.4%가 S)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 13 -->
+<div class="slide" data-slide="13">
+  <div class="slide-num-badge">13 / 36</div>
+  <div class="slide-title">🔥 피처 간 상관관계</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:12px">주요 피처 ↔ Survived 상관계수</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:12px">
+          <span style="color:var(--accent);font-weight:600">상관계수(Correlation Coefficient)</span>: -1~+1. 0≈상관없음, ±1≈강한상관
+        </div>
+        <div class="bar-h">
+          <div class="label" style="width:130px;font-size:.8rem">Sex(male=1)</div>
+          <div class="bar-track" style="position:relative;height:20px">
+            <div style="position:absolute;right:50%;width:54%;height:100%;background:var(--red);border-radius:4px 0 0 4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:.78rem;font-weight:600;color:#fff">-0.54</div>
+          </div>
+        </div>
+        <div class="bar-h">
+          <div class="label" style="width:130px;font-size:.8rem">Pclass</div>
+          <div class="bar-track" style="position:relative;height:20px">
+            <div style="position:absolute;right:50%;width:34%;height:100%;background:var(--orange);border-radius:4px 0 0 4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:.78rem;font-weight:600;color:#fff">-0.34</div>
+          </div>
+        </div>
+        <div class="bar-h">
+          <div class="label" style="width:130px;font-size:.8rem">Fare</div>
+          <div class="bar-track" style="position:relative;height:20px">
+            <div style="position:absolute;left:50%;width:26%;height:100%;background:var(--green);border-radius:0 4px 4px 0;display:flex;align-items:center;padding-left:6px;font-size:.78rem;font-weight:600;color:#0f172a">+0.26</div>
+          </div>
+        </div>
+        <div class="bar-h">
+          <div class="label" style="width:130px;font-size:.8rem">Has_Cabin</div>
+          <div class="bar-track" style="position:relative;height:20px">
+            <div style="position:absolute;left:50%;width:32%;height:100%;background:var(--green);border-radius:0 4px 4px 0;display:flex;align-items:center;padding-left:6px;font-size:.78rem;font-weight:600;color:#0f172a">+0.32</div>
+          </div>
+        </div>
+        <div class="bar-h">
+          <div class="label" style="width:130px;font-size:.8rem">IsAlone</div>
+          <div class="bar-track" style="position:relative;height:20px">
+            <div style="position:absolute;right:50%;width:20%;height:100%;background:var(--yellow);border-radius:4px 0 0 4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:.78rem;font-weight:600;color:#0f172a">-0.20</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:center;margin-top:16px;gap:4px;font-size:.78rem;color:var(--muted)">
+          <span style="color:var(--red)">■ 음의 상관</span>&nbsp;&nbsp;
+          <span style="color:var(--green)">■ 양의 상관</span>
+          &nbsp;&nbsp;← 0 →
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">🏆 핵심 상관 관계 요약</div>
+          <div style="font-size:.85rem;margin:8px 0">
+            <span style="color:var(--red);font-weight:700">Sex(male)</span> ↔ Survived: <strong style="color:var(--red)">-0.54</strong>
+            <div class="muted">남성일수록 사망 가능성 높음 (가장 강한 신호)</div>
+          </div>
+          <div style="font-size:.85rem;margin:8px 0">
+            <span style="color:var(--green);font-weight:700">Has_Cabin</span> ↔ Survived: <strong style="color:var(--green)">+0.32</strong>
+            <div class="muted">객실 기록 있는 사람 = 고가 티켓 보유 가능성 높음</div>
+          </div>
+          <div style="font-size:.85rem;margin:8px 0">
+            <span style="color:var(--orange);font-weight:700">Pclass</span> ↔ Survived: <strong style="color:var(--orange)">-0.34</strong>
+            <div class="muted">등급 번호 클수록(=저등급) 생존 낮음</div>
+          </div>
+        </div>
+        <div class="highlight-box">
+          <div style="font-weight:600;margin-bottom:6px;color:var(--yellow)">⚠️ 주의사항</div>
+          <p style="font-size:.83rem">상관관계 ≠ 인과관계<br>교란 변수를 항상 의심해야 함</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14 -->
+<div class="slide" data-slide="14">
+  <div class="slide-num-badge">14 / 36</div>
+  <div class="slide-title">🏷️ 이름에서 타이틀 추출</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">정규식으로 타이틀 추출</div>
+          <div class="term-explain"><span style="color:var(--accent);font-weight:600">정규식(Regular Expression)</span>: 문자열 패턴 검색/추출 도구</div>
+          <div style="margin-top:10px;background:#0f172a;border-radius:8px;padding:12px">
+            <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px"># 이름 예시</div>
+            <code style="font-size:.78rem;display:block;color:var(--text)">"Braund, Mr. Owen Harris"</code>
+            <div style="font-size:.75rem;color:var(--muted);margin:6px 0 4px"># 패턴</div>
+            <code style="font-size:.78rem;display:block;color:var(--accent)">r',\s*(.+?)\.'</code>
+            <div style="font-size:.75rem;color:var(--muted);margin:6px 0 4px"># 결과</div>
+            <code style="font-size:.78rem;display:block;color:var(--green)">"Mr"</code>
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">희귀 타이틀 통합</div>
+          <div style="font-size:.83rem;margin-bottom:6px">Dr, Rev, Col, Major, Sir... → <code style="color:var(--yellow)">Rare</code></div>
+          <div class="muted">소수 타이틀은 학습 데이터 부족 → 통합 처리</div>
+        </div>
+      </div>
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:14px">타이틀별 생존율</div>
+        <svg viewBox="0 0 260 200" style="width:100%">
+          <text x="50" y="35" fill="#94a3b8" font-size="10" text-anchor="end">Mrs</text>
+          <rect x="55" y="20" width="159.2" height="22" rx="4" fill="#4ade80"/>
+          <text x="220" y="35" fill="#4ade80" font-size="11" font-weight="bold">79.6%</text>
+          <text x="50" y="74" fill="#94a3b8" font-size="10" text-anchor="end">Miss</text>
+          <rect x="55" y="59" width="140.2" height="22" rx="4" fill="#4ade80" opacity="0.85"/>
+          <text x="201" y="74" fill="#4ade80" font-size="11" font-weight="bold">70.1%</text>
+          <text x="50" y="113" fill="#94a3b8" font-size="10" text-anchor="end">Master</text>
+          <rect x="55" y="98" width="115" height="22" rx="4" fill="#38bdf8"/>
+          <text x="176" y="113" fill="#38bdf8" font-size="11" font-weight="bold">57.5%</text>
+          <text x="50" y="152" fill="#94a3b8" font-size="10" text-anchor="end">Rare</text>
+          <rect x="55" y="137" width="89.6" height="22" rx="4" fill="#fbbf24"/>
+          <text x="150" y="152" fill="#fbbf24" font-size="11" font-weight="bold">44.8%</text>
+          <text x="50" y="191" fill="#94a3b8" font-size="10" text-anchor="end">Mr</text>
+          <rect x="55" y="176" width="31.4" height="22" rx="4" fill="#f87171"/>
+          <text x="92" y="191" fill="#f87171" font-size="11" font-weight="bold">15.7%</text>
+          <line x1="55" y1="210" x2="250" y2="210" stroke="#334155" stroke-width="1"/>
+        </svg>
+        <div class="term-explain" style="margin-top:6px"><code>Master</code>: 57.5% 생존 → "아이 먼저" 원칙 데이터로 증명</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 15 -->
+<div class="slide" data-slide="15">
+  <div class="slide-num-badge">15 / 36</div>
+  <div class="slide-title">⚙️ 피처 엔지니어링(Feature Engineering)</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">피처 엔지니어링이란?</div>
+          <p style="font-size:.85rem">원본 데이터에서 모델 학습에 더 유용한 새 피처를 생성하는 과정</p>
+          <div class="term-explain">도메인 지식 + 데이터 패턴 분석 → 더 강력한 신호 생성</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">🎯 5가지 핵심 전략</div>
+          <ol class="num-list">
+            <li>도메인 지식 활용 (타이타닉 역사적 사실)</li>
+            <li>결측값 스마트 대체</li>
+            <li>범주형 변수 인코딩</li>
+            <li>수치형 변수 변환 (로그 등)</li>
+            <li>교호작용 피처 생성</li>
+          </ol>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px">
+        <div class="card" style="border:1px solid var(--red)">
+          <div style="font-weight:700;color:var(--red);margin-bottom:8px">🚨 데이터 누수 방지 필수!</div>
+          <div style="font-size:.85rem;margin-bottom:8px">
+            <strong>핵심 원칙</strong>: 훈련 데이터로만 <code>fit()</code>, 테스트 데이터에는 <code>transform()</code>만 적용
+          </div>
+          <div class="term-explain">
+            <span style="color:var(--red);font-weight:600">데이터 누수(Data Leakage)</span>: 테스트 데이터 정보가 훈련에 영향을 주는 실수<br>→ Public Score와 CV Score 간 큰 차이의 주원인<br>→ TicketFreq 버그가 바로 이 케이스!
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">📊 결과</div>
+          <div class="grid-2" style="gap:8px">
+            <div class="card-sm" style="text-align:center">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--accent)">17개</div>
+              <div class="muted" style="font-size:.75rem">최종 사용 피처</div>
+            </div>
+            <div class="card-sm" style="text-align:center">
+              <div style="font-size:1.5rem;font-weight:700;color:var(--accent)">12개</div>
+              <div class="muted" style="font-size:.75rem">원본 피처</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:.82rem;color:var(--muted)">수치형 7개 + 범주형 10개</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 16 -->
+<div class="slide" data-slide="16">
+  <div class="slide-num-badge">16 / 36</div>
+  <div class="slide-title">📋 생성된 주요 피처 목록</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:16px">
+      <div class="card" style="padding:14px">
+        <table style="font-size:.82rem">
+          <tr><th>원본 피처</th><th>파생 피처</th><th>설명</th></tr>
+          <tr><td><code>Name</code></td><td><code style="color:var(--green)">Title</code></td><td>이름에서 사회적 지위 추출</td></tr>
+          <tr><td><code>SibSp+Parch</code></td><td><code style="color:var(--green)">FamilySize</code></td><td>총 가족 규모</td></tr>
+          <tr><td><code>FamilySize</code></td><td><code style="color:var(--green)">IsAlone</code></td><td>혼자 탑승 여부 (0/1)</td></tr>
+          <tr><td><code>FamilySize</code></td><td><code style="color:var(--green)">FamilySizeGroup</code></td><td>Alone/Small/Large</td></tr>
+          <tr><td><code>Age</code></td><td><code style="color:var(--green)">AgeGroup</code></td><td>Baby/Child/Teen/Adult/Senior</td></tr>
+          <tr><td><code>Fare</code></td><td><code style="color:var(--green)">LogFare</code></td><td>로그 변환 정규화</td></tr>
+          <tr><td><code>Cabin</code></td><td><code style="color:var(--green)">Has_Cabin</code></td><td>객실 기록 유무 (0/1)</td></tr>
+          <tr><td><code>Cabin</code></td><td><code style="color:var(--green)">Cabin_Deck</code></td><td>첫 글자 = 갑판 위치</td></tr>
+          <tr><td><code>Pclass+Sex</code></td><td><code style="color:var(--accent)">Pclass_Sex</code></td><td>교호작용 피처</td></tr>
+          <tr><td><code>Ticket</code></td><td><code style="color:var(--accent)">TicketFreq</code></td><td>동일 티켓 공유 인원 수</td></tr>
+        </table>
+      </div>
+      <div class="flex-col" style="gap:12px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">💡 교호작용 피처란?</div>
+          <p style="font-size:.85rem">두 피처를 결합해 새로운 신호 생성</p>
+          <div class="term-explain" style="margin-top:6px"><code>Pclass_Sex</code> 예시:<br>"1등석 여성", "3등석 남성" 등 6가지 조합<br>→ 두 피처의 상호작용 효과 포착</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">🎯 TicketFreq 설명</div>
+          <p style="font-size:.83rem">같은 티켓 번호를 공유하는 승객 수</p>
+          <div class="term-explain">가족이나 그룹 여행자 식별 가능<br>v1에서 버그 있었음 → v4에서 수정</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:6px">📊 피처 요약</div>
+          <div style="display:flex;gap:8px">
+            <div class="card-sm" style="flex:1;text-align:center">
+              <div style="font-size:1.3rem;font-weight:700;color:var(--accent)">7</div>
+              <div class="muted" style="font-size:.72rem">수치형</div>
+            </div>
+            <div class="card-sm" style="flex:1;text-align:center">
+              <div style="font-size:1.3rem;font-weight:700;color:var(--purple)">10</div>
+              <div class="muted" style="font-size:.72rem">범주형</div>
+            </div>
+            <div class="card-sm" style="flex:1;text-align:center">
+              <div style="font-size:1.3rem;font-weight:700;color:var(--green)">17</div>
+              <div class="muted" style="font-size:.72rem">최종</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 17 -->
+<div class="slide" data-slide="17">
+  <div class="slide-num-badge">17 / 36</div>
+  <div class="slide-title">🔧 sklearn 전처리 파이프라인</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">Pipeline이란?</div>
+          <p style="font-size:.85rem">여러 전처리 단계를 순서대로 묶어 일관성 있게 적용</p>
+          <div class="term-explain">train에서 fit한 변환기를 test에 그대로 적용<br>→ 데이터 누수 방지의 핵심 도구</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px;color:var(--accent)">🔢 수치형 파이프라인</div>
+          <div class="pipeline-flow" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="pipeline-step" style="font-size:.78rem">SimpleImputer(strategy='median')</div>
+            <div style="color:var(--muted);font-size:.8rem;padding-left:8px">↓ 결측값 → 중앙값 대체</div>
+            <div class="pipeline-step" style="font-size:.78rem">StandardScaler()</div>
+            <div style="color:var(--muted);font-size:.8rem;padding-left:8px">↓ 평균=0, 표준편차=1로 정규화</div>
+          </div>
+          <div class="term-explain" style="margin-top:8px"><span style="color:var(--accent);font-weight:600">StandardScaler(표준화)</span>: SVM, 로지스틱 회귀에 필수</div>
+        </div>
+      </div>
+      <div class="flex-col" style="gap:14px">
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px;color:var(--purple)">🔤 범주형 파이프라인</div>
+          <div class="pipeline-flow" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="pipeline-step" style="font-size:.78rem;border-color:var(--purple);color:var(--purple)">SimpleImputer(strategy='most_frequent')</div>
+            <div style="color:var(--muted);font-size:.8rem;padding-left:8px">↓ 결측값 → 최빈값 대체</div>
+            <div class="pipeline-step" style="font-size:.78rem;border-color:var(--purple);color:var(--purple)">OrdinalEncoder()</div>
+            <div style="color:var(--muted);font-size:.8rem;padding-left:8px">↓ 범주 → 정수 인코딩</div>
+          </div>
+          <div class="term-explain" style="margin-top:8px"><span style="color:var(--accent);font-weight:600">OrdinalEncoder</span>: Mr=0, Mrs=1, Miss=2 등으로 변환<br>트리 기반 모델에 적합</div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">ColumnTransformer 구조</div>
+          <div style="background:#0f172a;border-radius:8px;padding:10px;font-size:.78rem">
+            <code style="display:block;color:var(--text)">ColumnTransformer([</code>
+            <code style="display:block;color:var(--accent);padding-left:12px">('num', num_pipe, num_features),</code>
+            <code style="display:block;color:var(--purple);padding-left:12px">('cat', cat_pipe, cat_features)</code>
+            <code style="display:block;color:var(--text)">])</code>
+          </div>
+          <div class="term-explain" style="margin-top:6px"><span style="color:var(--accent);font-weight:600">ColumnTransformer</span>: 수치형/범주형 피처에 각각 다른 변환 동시 적용</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 18 -->
+<div class="slide" data-slide="18">
+  <div class="slide-num-badge">18 / 36</div>
+  <div class="slide-title">🤖 학습에 사용된 6가지 모델</div>
+  <div class="slide-content">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div class="model-card">
+        <div class="name">📈 로지스틱 회귀</div>
+        <div style="color:var(--muted);font-size:.78rem;margin-bottom:6px">Logistic Regression</div>
+        <p style="font-size:.8rem">선형 경계로 이진 분류. 해석 용이.</p>
+        <div class="term-explain" style="margin-top:6px">기준(Baseline) 모델로 사용. 시그모이드 함수로 확률 출력</div>
+      </div>
+      <div class="model-card">
+        <div class="name">🌲 랜덤 포레스트</div>
+        <div style="color:var(--muted);font-size:.78rem;margin-bottom:6px">Random Forest</div>
+        <p style="font-size:.8rem">다수의 결정 트리를 앙상블.</p>
+        <div class="term-explain" style="margin-top:6px"><span style="color:var(--accent)">배깅(Bagging)</span>: 독립적인 여러 모델 평균. 과적합에 강건</div>
+      </div>
+      <div class="model-card">
+        <div class="name">🚀 그래디언트 부스팅</div>
+        <div style="color:var(--muted);font-size:.78rem;margin-bottom:6px">Gradient Boosting</div>
+        <p style="font-size:.8rem">약한 학습기를 순차적으로 쌓아 오류 감소.</p>
+        <div class="term-explain" style="margin-top:6px"><span style="color:var(--accent)">부스팅(Boosting)</span>: 이전 모델 오류를 다음이 보정</div>
+      </div>
+      <div class="model-card" style="border-color:var(--accent)">
+        <div class="name" style="color:var(--accent)">⚡ XGBoost</div>
+        <div style="color:var(--muted);font-size:.78rem;margin-bottom:6px">eXtreme Gradient Boosting</div>
+        <p style="font-size:.8rem">Gradient Boosting의 최적화 구현.</p>
+        <div class="term-explain" style="margin-top:6px">L1/L2 정규화, 병렬 처리, 결측값 자동 처리 지원</div>
+      </div>
+      <div class="model-card" style="border-color:var(--green)">
+        <div class="name" style="color:var(--green)">🌿 LightGBM</div>
+        <div style="color:var(--muted);font-size:.78rem;margin-bottom:6px">Light Gradient Boosting Machine</div>
+        <p style="font-size:.8rem">리프(leaf) 중심 트리 분할로 빠른 속도.</p>
+        <div class="term-explain" style="margin-top:6px">적은 메모리 사용, 대용량 데이터에 강점</div>
+      </div>
+      <div class="model-card">
+        <div class="name">🎯 SVM</div>
+        <div style="color:var(--muted);font-size:.78rem;margin-bottom:6px">Support Vector Machine</div>
+        <p style="font-size:.8rem">최적의 분류 경계면(초평면)을 탐색.</p>
+        <div class="term-explain" style="margin-top:6px">소규모 고차원 데이터에서 경쟁력. 표준화 필수</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 19 -->
+<div class="slide" data-slide="19">
+  <div class="slide-num-badge">19 / 36</div>
+  <div class="slide-title">📊 5-겹 계층적 교차 검증(Stratified K-Fold CV)</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="flex-col" style="gap:14px">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">교차 검증이란?</div>
+          <div class="term-explain" style="border:none;padding:0;margin:0">
+            <span style="color:var(--accent);font-weight:600">Cross-Validation</span>: 데이터를 K개로 나눠 K번 학습/검증 반복. 과적합 없이 모델 성능 평가<br><br>
+            <span style="color:var(--green);font-weight:600">Stratified</span>: 각 폴드에서 생존율 비율(38.4%)을 동일하게 유지
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:8px">스태킹 앙상블 메타-CV</div>
+          <div style="font-size:2rem;font-weight:800;color:var(--green)">83.50%</div>
+          <div class="muted">최종 앙상블 교차 검증 점수</div>
+        </div>
+      </div>
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:14px">모델별 CV 점수 (5-Fold)</div>
+        <svg viewBox="0 0 280 200" style="width:100%">
+          <!-- XGBoost -->
+          <text x="88" y="30" fill="#94a3b8" font-size="9" text-anchor="end">XGBoost</text>
+          <rect x="92" y="17" width="167" height="18" rx="3" fill="#38bdf8"/>
+          <text x="264" y="29" fill="#38bdf8" font-size="9" font-weight="bold">83.50%</text>
+          <!-- RF -->
+          <text x="88" y="63" fill="#94a3b8" font-size="9" text-anchor="end">Random Forest</text>
+          <rect x="92" y="50" width="165.4" height="18" rx="3" fill="#4ade80"/>
+          <text x="262" y="62" fill="#4ade80" font-size="9" font-weight="bold">82.71%</text>
+          <!-- LGB -->
+          <text x="88" y="96" fill="#94a3b8" font-size="9" text-anchor="end">LightGBM</text>
+          <rect x="92" y="83" width="164.8" height="18" rx="3" fill="#a78bfa"/>
+          <text x="261" y="95" fill="#a78bfa" font-size="9" font-weight="bold">82.38%</text>
+          <!-- GB -->
+          <text x="88" y="129" fill="#94a3b8" font-size="9" text-anchor="end">Grad.Boosting</text>
+          <rect x="92" y="116" width="163.8" height="18" rx="3" fill="#fbbf24"/>
+          <text x="260" y="128" fill="#fbbf24" font-size="9" font-weight="bold">81.93%</text>
+          <!-- SVM -->
+          <text x="88" y="162" fill="#94a3b8" font-size="9" text-anchor="end">SVM</text>
+          <rect x="92" y="149" width="163.6" height="18" rx="3" fill="#fb923c"/>
+          <text x="260" y="161" fill="#fb923c" font-size="9" font-weight="bold">81.82%</text>
+          <!-- LR -->
+          <text x="88" y="195" fill="#94a3b8" font-size="9" text-anchor="end">Logistic Reg.</text>
+          <rect x="92" y="182" width="160.9" height="18" rx="3" fill="#64748b"/>
+          <text x="257" y="194" fill="#94a3b8" font-size="9" font-weight="bold">80.47%</text>
+        </svg>
+        <div class="muted" style="font-size:.75rem;margin-top:4px">* 차이가 작아 보이는 이유: y축이 79-84% 범위에 집중됨</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 20 -->
+<div class="slide" data-slide="20">
+  <div class="slide-num-badge">20 / 36</div>
+  <div class="slide-title">📈 ROC 커브 &amp; AUC</div>
+  <div class="slide-content">
+    <div class="grid-2" style="gap:20px">
+      <div class="card" style="padding:20px">
+        <div style="font-weight:600;margin-bottom:8px">ROC 커브 (개략적 표현)</div>
+        <svg viewBox="0 0 220 220" style="width:100%">
+          <!-- axes -->
+          <line x1="30" y1="190" x2="210" y2="190" stroke="#334155" stroke-width="1.5"/>
+          <line x1="30" y1="10" x2="30" y2="190" stroke="#334155" stroke-width="1.5"/>
+          <!-- diagonal (random) -->
+          <line x1="30" y1="190" x2="210" y2="10" stroke="#334155" stroke-width="1" stroke-dasharray="5,4" opacity="0.5"/>
+          <!-- XGBoost curve -->
+          <path d="M30,190 C50,120 80,50 130,25 C160,14 190,11 210,10" stroke="#38bdf8" stroke-width="2.5" fill="none"/>
+          <!-- LightGBM curve -->
+          <path d="M30,190 C50,125 80,55 130,28 C160,16 190,12 210,10" stroke="#4ade80" stroke-width="2" fill="none" opacity="0.85"/>
+          <!-- RF curve -->
+          <path d="M30,190 C50,130 80,62 130,32 C160,19 190,13 210,10" stroke="#a78bfa" stroke-width="2" fill="none" opacity="0.8"/>
+          <!-- GB curve -->
+          <path d="M30,190 C50,133 80,66 130,36 C160,22 190,14 210,10" stroke="#fbbf24" stroke-width="2" fill="none" opacity="0.8"/>
+          <!-- labels -->
+          <text x="110" y="205" fill="#94a3b8" font-size="9" text-anchor="middle">거짓양성률 (FPR)</text>
+          <text x="15" y="100" fill="#94a3b8" font-size="9" text-anchor="middle" transform="rotate(-90,15,100)">진짜양성률 (TPR)</text>
+          <text x="30" y="205" fill="#94a3b8" font-size="8">0</text>
+          <text x="205" y="205" fill="#94a3b8" font-size="8">1</text>
+          <text x="22" y="14" fill="#94a3b8" font-size="8">1</text>
+        </svg>
+      </div>
+      <div class="flex-col" style="gap:14px;justify-content:center">
+        <div class="highlight-box">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:8px">ROC 커브란?</div>
+          <div class="term-explain" style="border:none;padding:0">
+            <span style="color:var(--accent);font-weight:600">ROC (Receiver Operating Characteristic)</span>: X축=거짓양성률, Y축=진짜양성률.<br>좌상단에 가까울수록 좋은 모델<br><br>
+            <span style="color:var(--green);font-weight:600">AUC (Area Under Curve)</span>: ROC 아래 면적. 1.0=완벽, 0.5=무작위
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:600;margin-bottom:10px">AUC 점수</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--accent);font-size:.85rem">⚡ XGBoost</span>
+              <strong style="color:var(--accent)">0.876</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--green);font-size:.85rem">🌿 LightGBM</span>
+              <strong style="color:var(--green)">0.874</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--purple);font-size:.85rem">🌲 Random Forest</span>
+              <strong style="color:var(--purple)">0.869</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="color:var(--yellow);font-size:.85rem">🚀 Gradient Boosting</span>
+              <strong style="color:var(--yellow)">0.866</strong>
+            </div>
+          </div>
+        </div>
+        <div class="card-sm">
+          <div class="flex" style="gap:8px;font-size:.8rem;flex-wrap:wrap">
+            <div><span style="color:var(--accent)">━</span> XGBoost</div>
+            <div><span style="color:var(--green)">━</span> LightGBM</div>
+            <div><span style="color:var(--purple)">━</span> RF</div>
+            <div><span style="color:var(--yellow)">━</span> GB</div>
+            <div><span style="color:var(--border)">╌</span> 무작위</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end slideshow -->
+
+<div id="nav">
+  <button id="btn-prev" onclick="changeSlide(-1)" disabled>◀ 이전</button>
+  <button id="btn-next" onclick="changeSlide(1)">다음 ▶</button>
+</div>
+
+<script>
+const TOTAL = 36;
+let current = 1;
+
+function updateUI(){
+  document.querySelectorAll('.slide').forEach(s=>{
+    const n=parseInt(s.dataset.slide);
+    s.classList.remove('active','prev');
+    if(n===current) s.classList.add('active');
+    else if(n<current) s.classList.add('prev');
+  });
+  document.getElementById('slide-counter').textContent=current+' / '+TOTAL;
+  document.getElementById('progress-bar').style.width=((current/TOTAL)*100)+'%';
+  document.getElementById('btn-prev').disabled=current===1;
+  document.getElementById('btn-next').disabled=current===TOTAL;
+}
+
+function changeSlide(dir){
+  const next=current+dir;
+  if(next>=1&&next<=TOTAL){current=next;updateUI();}
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='PageDown') changeSlide(1);
+  if(e.key==='ArrowLeft'||e.key==='PageUp') changeSlide(-1);
+});
+
+updateUI();
+</script>
+</body>
+</html>
